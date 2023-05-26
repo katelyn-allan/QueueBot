@@ -3,7 +3,8 @@ import os
 from dotenv import load_dotenv
 from discord import ApplicationContext
 import commands.queue as queue
-import commands.game as game
+
+# import commands.game as game
 from role_ids import *
 from exceptions import *
 
@@ -22,7 +23,11 @@ async def on_ready():
 # # QUEUE COMMANDS
 @bot.slash_command(name="join", description="Join the queue for a game")
 async def slash_join_queue(ctx: ApplicationContext):
-    user_id, queue_length = queue.join_queue(ctx)
+    try:
+        user_id, queue_length = queue.join_queue(ctx)
+    except AlreadyInQueueException as e:
+        await ctx.respond(f"<@{e.user.id}> is already in the queue!")
+        return
     if queue_length == 1:
         await ctx.respond(
             f"<@{user_id}> has joined the queue! There is now {queue_length} player in the queue."
@@ -40,7 +45,11 @@ async def slash_list_queue(ctx: ApplicationContext):
 
 @bot.slash_command(name="leave", description="Leave the queue for a game")
 async def slash_leave_queue(ctx: ApplicationContext):
-    user_id, queue_length = queue.leave_queue(ctx)
+    try:
+        user_id, queue_length = queue.leave_queue(ctx)
+    except NotInQueueException as e:
+        await ctx.respond(f"<@{e.user.id}> is not in the queue!")
+        return
     if queue_length == 1:
         await ctx.respond(
             f"<@{user_id}> has left the queue! There is now {queue_length} player in the queue."
@@ -54,7 +63,7 @@ async def slash_leave_queue(ctx: ApplicationContext):
 @bot.slash_command(name="clear", description="Clear the queue")
 async def slash_clear_queue(ctx: ApplicationContext):
     if (
-        BOT_ENGINEER_ID in [role.id for role in ctx.user.roles]
+        ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
     ):
         queue.clear_queue()
@@ -64,15 +73,6 @@ async def slash_clear_queue(ctx: ApplicationContext):
 
 
 # # GAME COMMANDS
-
-
-@bot.slash_command(name="start", description="Start a game")
-async def slash_start_game(ctx: ApplicationContext):
-    try:
-        game.start_game(ctx)
-        await ctx.respond("Game started!")
-    except NotEnoughPlayersException or GameIsInProgressException as e:
-        await ctx.respond(e)
 
 
 if __name__ == "__main__":
