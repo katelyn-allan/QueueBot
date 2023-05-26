@@ -87,6 +87,7 @@ def load_player_data() -> None:
 
 
 PLAYER_DATA: Dict[str, PlayerStats] = {}
+load_player_data()
 
 
 def update_player_data() -> None:
