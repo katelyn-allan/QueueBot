@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from discord import ApplicationContext
 import commands.queue as queue
+import commands.player_stats as player_stats
 
 # import commands.game as game
 from role_ids import *
@@ -73,6 +74,12 @@ async def slash_clear_queue(ctx: ApplicationContext):
 
 
 # # GAME COMMANDS
+
+
+# # PLAYER COMMANDS
+@bot.slash_command(name="stats", description="Get your stats")
+async def slash_get_stats(ctx: ApplicationContext):
+    await ctx.respond(str(player_stats.get_player_stats(ctx)))
 
 
 if __name__ == "__main__":

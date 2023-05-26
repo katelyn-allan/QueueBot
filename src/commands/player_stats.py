@@ -88,8 +88,6 @@ def load_player_data() -> None:
 
 PLAYER_DATA: Dict[str, PlayerStats] = {}
 
-load_player_data()
-
 
 def update_player_data() -> None:
     """Updates player_data.json with the current data in memory"""
@@ -111,10 +109,11 @@ def instantiate_new_players(users: List[User]) -> None:
 def get_player_stats(ctx: ApplicationContext) -> dict:
     """Returns the player's stats"""
     if str(ctx.user.id) not in PLAYER_DATA:
-        raise PlayerNotFoundException(ctx.user)
+        instantiate_new_players([ctx.user])
     user_data = PLAYER_DATA[str(ctx.user.id)]
     returned_stats = {}
     returned_stats["tank"] = user_data.tank.get_stats()
     returned_stats["support"] = user_data.support.get_stats()
     returned_stats["assassin"] = user_data.assassin.get_stats()
     returned_stats["offlane"] = user_data.offlane.get_stats()
+    return returned_stats
