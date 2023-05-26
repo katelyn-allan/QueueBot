@@ -75,7 +75,7 @@ def list_queue(ctx: ApplicationContext) -> str:
 def leave_queue(ctx: ApplicationContext) -> tuple([int, int]):
     """Facilitates leaving the queue, returns the user's id and the number of people in the queue"""
     if ctx.user not in QUEUE:
-        raise NotInQueueException(ctx.user)
+        raise PlayerNotFoundException(ctx.user)
     QUEUE.remove(ctx.user)
     return ctx.user.id, len(QUEUE)
 

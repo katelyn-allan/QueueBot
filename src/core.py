@@ -47,7 +47,7 @@ async def slash_list_queue(ctx: ApplicationContext):
 async def slash_leave_queue(ctx: ApplicationContext):
     try:
         user_id, queue_length = queue.leave_queue(ctx)
-    except NotInQueueException as e:
+    except PlayerNotFoundException as e:
         await ctx.respond(f"<@{e.user.id}> is not in the queue!")
         return
     if queue_length == 1:

@@ -11,6 +11,6 @@ class AlreadyInQueueException(Exception):
         self.user = user
 
 
-class NotInQueueException(Exception):
-    def __init__(self, user):
-        self.user = user
+class PlayerNotFoundException(Exception):
+    def __init__(self, player):
+        self.player = player
