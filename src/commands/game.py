@@ -13,3 +13,18 @@ import numpy as np
 
 def create_game(ctx: ApplicationContext) -> None:
     players_in_queue = QUEUE.copy()
+    # For each player in the queue, create a numpy matrix, where the rows are the players, and the columns are the roles (Tank, Healer, Assassin, Offlane).
+    # The cost of each player to be assigned to a role is 2 if they have the role, 1 if they are a fill, and 0 if they do not have any roles.
+    matrix = np.zeros((len(players_in_queue), 4))
+    for i, player in enumerate(players_in_queue):
+        for j, role in enumerate(player.roles):
+            if role.name == "Tank":
+                matrix[i][0] = 2
+            elif role.name == "Healer":
+                matrix[i][1] = 2
+            elif role.name == "Assassin":
+                matrix[i][2] = 2
+            elif role.name == "Offlane":
+                matrix[i][3] = 2
+            elif role.name == "Fill":
+                matrix[i][j] = 1
