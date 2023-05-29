@@ -4,12 +4,30 @@ from commands.queue import QUEUE
 from commands.player_stats import PLAYER_DATA
 from typing import List, Dict
 import numpy as np
-from itertools import combinations
-from scipy.optimize import linear_sum_assignment
 import itertools
+from scipy.optimize import linear_sum_assignment
+import random
+
+# TODO: Make this configurable?
+VALID_MAPS = [
+    "Alterac Pass",
+    "Garden of Terror",
+    "Volskaya Foundry",
+    "Towers of Doom",
+    "Infernal Shrines",
+    "Battlefield of Eternity",
+    "Tomb of the Spider Queen",
+    "Sky Temple",
+    "Dragon Shire",
+    "Cursed Hollow",
+    "Braxis Holdout",
+]
 
 
 def convert_int_to_role(role_int: int) -> str:
+    """
+    Helper function which turns a cost matrix indicy into a role string
+    """
     if role_int == 0 or role_int == 1:
         return "tank"
     elif role_int == 2 or role_int == 3:
@@ -21,6 +39,10 @@ def convert_int_to_role(role_int: int) -> str:
 
 
 class Player(User):
+    """
+    Class to store a player's role and rating for use in the game
+    """
+
     def __init__(self, user: User, role: str):
         super().__init__(user.id, user.name, user.discriminator, user.avatar)
         self.role = role
@@ -28,10 +50,14 @@ class Player(User):
 
 
 def find_valid_games() -> List[List[Player]]:
+    """
+    Finds all valid games of 10 players from the queue.
+    A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
+    """
     players_in_queue: List[User] = QUEUE.copy()
     player_set = set(players_in_queue)
     combinations_of_players: List[List[User]] = [
-        list(comb) for comb in combinations(player_set, 10)
+        list(comb) for comb in itertools.combinations(player_set, 10)
     ]
     valid_games = []
 
@@ -69,14 +95,16 @@ def find_valid_games() -> List[List[Player]]:
                 elif role.name == "Offlane (Fill)":
                     matrix[i][8] = 1
                     matrix[i][9] = 1
-        # Find the optimal matching
+        # Find the optimal matching using the Hungarian Algorithm
+        # https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.optimize.linear_sum_assignment.html
         row_ind, col_ind = linear_sum_assignment(matrix)
         # Check if this is a valid set, if not, continue to the next 10 perm.
         if any(matrix[row_ind, col_ind] == 2):
             continue
         game_dict = {"tank": [], "support": [], "assassin": [], "offlane": []}
         for i, player in enumerate(perm):
-            game_dict[convert_int_to_role(col_ind[i])].append(player)
+            role = convert_int_to_role(col_ind[i])
+            game_dict[role].append(Player(player, role))
         valid_games.append(game_dict)
 
     return valid_games
@@ -103,12 +131,39 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
     return two_teams
 
 
-def balance_teams(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, List[User]]:
-    # For each game, calculate the average trueskill of each team. The team with the higher average trueskill is the better team.
-    # Find the game with the smallest difference in average trueskill between the teams.
-    # Return the game with the smallest difference in average trueskill between the teams.
+def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> List[List[Player]]:
+    """
+    Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation.
+    """
     best_game = None
-    best_diff = 10000
+    best_quality = 10000
     for game in valid_games:
         # Find every permutation of team comp, in which a valid team has 5 players: One tank, One Support, Two Assassins, and One Offlane.
         team_combos: List[List[List[Player]]] = get_team_combinations(game)
+        # TODO: Should we instead compare match quality within team_combos and then take a random game?
+        for combo in team_combos:
+            team1 = combo[0]
+            team2 = combo[1]
+            match_quality = trueskill.quality(
+                [
+                    (player.rating for player in team1),
+                    (player.rating for player in team2),
+                ]
+            )
+            # Check if match_quality is closer to 0.5 than the current best match_quality.
+            if abs(0.5 - match_quality) < abs(0.5 - best_quality):
+                best_game = combo
+                best_quality = match_quality
+
+    game = {"team1": {}, "team2": {}}
+    for player in best_game[0]:
+        game["team1"][player.role] = player
+    for player in best_game[1]:
+        game["team2"][player.role] = player
+    # Select a random map
+    game["map"] = random.choice(VALID_MAPS)
+
+    return best_game
+
+
+def start_game(ctx: ApplicationContext)
