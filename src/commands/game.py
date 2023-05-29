@@ -1,24 +1,33 @@
 import trueskill
 from discord import ApplicationContext, User
 from commands.queue import QUEUE
+from commands.player_stats import PLAYER_DATA
 from typing import List, Dict
 import numpy as np
 from itertools import combinations
 from scipy.optimize import linear_sum_assignment
+import itertools
 
 
 def convert_int_to_role(role_int: int) -> str:
     if role_int == 0 or role_int == 1:
-        return "Tanks"
+        return "tank"
     elif role_int == 2 or role_int == 3:
-        return "Supports"
+        return "support"
     elif role_int == 4 or role_int == 5 or role_int == 6 or role_int == 7:
-        return "Assassins"
+        return "assassin"
     elif role_int == 8 or role_int == 9:
-        return "Offlanes"
+        return "offlane"
 
 
-def create_game(ctx: ApplicationContext) -> None:
+class Player(User):
+    def __init__(self, user: User, role: str):
+        super().__init__(user.id, user.name, user.discriminator, user.avatar)
+        self.role = role
+        self.rating = PLAYER_DATA[str(user.id)][role]["rating"]
+
+
+def find_valid_games() -> List[List[Player]]:
     players_in_queue: List[User] = QUEUE.copy()
     player_set = set(players_in_queue)
     combinations_of_players: List[List[User]] = [
@@ -65,9 +74,41 @@ def create_game(ctx: ApplicationContext) -> None:
         # Check if this is a valid set, if not, continue to the next 10 perm.
         if any(matrix[row_ind, col_ind] == 2):
             continue
-        game_dict = {"Tanks": [], "Supports": [], "Assassins": [], "Offlanes": []}
+        game_dict = {"tank": [], "support": [], "assassin": [], "offlane": []}
         for i, player in enumerate(perm):
             game_dict[convert_int_to_role(col_ind[i])].append(player)
         valid_games.append(game_dict)
 
-    # Use the hungarian algorithm to solve the assignment problem.
+    return valid_games
+
+
+def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Player]]]:
+    """
+    Finds every combination of players by role and returns a list of unique two team combinations.
+    """
+    combinations = []
+    for tank in players["tank"]:
+        for support in players["support"]:
+            for assassin in itertools.combinations(players["assassin"], 2):
+                for offlane in players["offlane"]:
+                    combinations.append(
+                        [tank, support, assassin[0], assassin[1], offlane]
+                    )
+    two_teams = []
+    for team1 in combinations:
+        for team2 in combinations:
+            if not any(player in team2 for player in team1):
+                if [team2, team1] not in two_teams:
+                    two_teams.append([team1, team2])
+    return two_teams
+
+
+def balance_teams(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, List[User]]:
+    # For each game, calculate the average trueskill of each team. The team with the higher average trueskill is the better team.
+    # Find the game with the smallest difference in average trueskill between the teams.
+    # Return the game with the smallest difference in average trueskill between the teams.
+    best_game = None
+    best_diff = 10000
+    for game in valid_games:
+        # Find every permutation of team comp, in which a valid team has 5 players: One tank, One Support, Two Assassins, and One Offlane.
+        team_combos: List[List[List[Player]]] = get_team_combinations(game)
