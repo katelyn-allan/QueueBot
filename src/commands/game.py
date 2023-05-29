@@ -3,28 +3,71 @@ from discord import ApplicationContext, User
 from commands.queue import QUEUE
 from typing import List, Dict
 import numpy as np
+from itertools import combinations
+from scipy.optimize import linear_sum_assignment
 
 
-# Implement the hungarian algorithm to solve the assignment problem,
-# where we're maximizing cost to assign users in the queue to a 5 man team,
-# where each user has a cost to be assigned to a role, and a team has a tank, a support, two assassins, and an offlane.
-# If a player has the discord role for their game role, they have a cost of 2, if they are listed as a fill, it is a cost of 1, and if they do not have any roles associated, it is a cost of 0.
+def convert_int_to_role(role_int: int) -> str:
+    if role_int == 0 or role_int == 1:
+        return "Tanks"
+    elif role_int == 2 or role_int == 3:
+        return "Supports"
+    elif role_int == 4 or role_int == 5 or role_int == 6 or role_int == 7:
+        return "Assassins"
+    elif role_int == 8 or role_int == 9:
+        return "Offlanes"
 
 
 def create_game(ctx: ApplicationContext) -> None:
-    players_in_queue = QUEUE.copy()
+    players_in_queue: List[User] = QUEUE.copy()
+    player_set = set(players_in_queue)
+    combinations_of_players: List[List[User]] = [
+        list(comb) for comb in combinations(player_set, 10)
+    ]
+    valid_games = []
+
     # For each player in the queue, create a numpy matrix, where the rows are the players, and the columns are the roles (Tank, Healer, Assassin, Offlane).
-    # The cost of each player to be assigned to a role is 2 if they have the role, 1 if they are a fill, and 0 if they do not have any roles.
-    matrix = np.zeros((len(players_in_queue), 4))
-    for i, player in enumerate(players_in_queue):
-        for j, role in enumerate(player.roles):
-            if role.name == "Tank":
-                matrix[i][0] = 2
-            elif role.name == "Healer":
-                matrix[i][1] = 2
-            elif role.name == "Assassin":
-                matrix[i][2] = 2
-            elif role.name == "Offlane":
-                matrix[i][3] = 2
-            elif role.name == "Fill":
-                matrix[i][j] = 1
+    # The cost of each player to be assigned to a role is 0 if they have the role, 1 if they are a fill, and 2 if they do not have any roles.
+    for perm in combinations_of_players:
+        matrix = np.full((len(perm), 10), 2)
+        for i, player in enumerate(perm):
+            for role in player.roles:
+                if role.name == "Tank":
+                    matrix[i][0] = 0
+                    matrix[i][1] = 0
+                elif role.name == "Tank (Fill)":
+                    matrix[i][0] = 1
+                    matrix[i][1] = 1
+                elif role.name == "Support":
+                    matrix[i][2] = 0
+                    matrix[i][3] = 0
+                elif role.name == "Support (Fill)":
+                    matrix[i][2] = 1
+                    matrix[i][3] = 1
+                elif role.name == "Assassin":
+                    matrix[i][4] = 0
+                    matrix[i][5] = 0
+                    matrix[i][6] = 0
+                    matrix[i][7] = 0
+                elif role.name == "Assassin (Fill)":
+                    matrix[i][4] = 1
+                    matrix[i][5] = 1
+                    matrix[i][6] = 1
+                    matrix[i][7] = 1
+                elif role.name == "Offlane":
+                    matrix[i][8] = 0
+                    matrix[i][9] = 0
+                elif role.name == "Offlane (Fill)":
+                    matrix[i][8] = 1
+                    matrix[i][9] = 1
+        # Find the optimal matching
+        row_ind, col_ind = linear_sum_assignment(matrix)
+        # Check if this is a valid set, if not, continue to the next 10 perm.
+        if any(matrix[row_ind, col_ind] == 2):
+            continue
+        game_dict = {"Tanks": [], "Supports": [], "Assassins": [], "Offlanes": []}
+        for i, player in enumerate(perm):
+            game_dict[convert_int_to_role(col_ind[i])].append(player)
+        valid_games.append(game_dict)
+
+    # Use the hungarian algorithm to solve the assignment problem.
