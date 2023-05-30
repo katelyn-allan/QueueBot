@@ -7,6 +7,7 @@ import numpy as np
 import itertools
 from scipy.optimize import linear_sum_assignment
 import random
+from exceptions import *
 
 # TODO: Make this configurable?
 VALID_MAPS = [
@@ -166,4 +167,22 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> List[List[Play
     return best_game
 
 
-def start_game(ctx: ApplicationContext)
+CURRENT_GAME = {}
+
+
+def start_game(ctx: ApplicationContext):
+    """
+    Takes the players from the queue and creates a game.
+    """
+    if CURRENT_GAME != {}:
+        raise GameInProgressException("A game is already in progress.")
+    valid_games = find_valid_games()
+    if len(valid_games) == 0:
+        raise NoValidGameException(
+            "Not enough players on each role to make a valid game."
+        )
+    best_game = find_best_game(valid_games)
+    global CURRENT_GAME
+    CURRENT_GAME = best_game
+    # TODO: Move players into voice channels and stuff
+    return CURRENT_GAME

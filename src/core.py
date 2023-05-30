@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from discord import ApplicationContext
 import commands.queue as queue
 import commands.player_stats as player_stats
+import commands.game as game
 
 # import commands.game as game
 from role_ids import *
@@ -74,6 +75,14 @@ async def slash_clear_queue(ctx: ApplicationContext):
 
 
 # # GAME COMMANDS
+@bot.slash_command(name="start", description="Start a game")
+async def slash_start_game(ctx: ApplicationContext):
+    try:
+        await ctx.respond(game.start_game(ctx))
+    except NotEnoughPlayersException:
+        await ctx.respond("Not enough players to start a game!")
+    except GameIsInProgressException:
+        await ctx.respond("Game is already in progress!")
 
 
 # # PLAYER COMMANDS

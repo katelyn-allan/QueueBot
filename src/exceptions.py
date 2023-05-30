@@ -14,3 +14,11 @@ class AlreadyInQueueException(Exception):
 class PlayerNotFoundException(Exception):
     def __init__(self, player):
         self.player = player
+
+
+class NoValidGameException(Exception):
+    pass
+
+
+class GameInProgressException(Exception):
+    pass
