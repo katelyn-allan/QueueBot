@@ -5,6 +5,7 @@ from discord import ApplicationContext
 import commands.queue as queue
 import commands.player_stats as player_stats
 import commands.game as game
+from typing import List, Dict, Any
 
 # import commands.game as game
 from role_ids import *
@@ -40,9 +41,44 @@ async def slash_join_queue(ctx: ApplicationContext):
         )
 
 
+def convert_list_to_string(l: List) -> str:
+    return_str = ""
+    for item in l:
+        return_str += f"{item}\n"
+    return return_str
+
+
 @bot.slash_command(name="list", description="List the players in the queue")
 async def slash_list_queue(ctx: ApplicationContext):
-    await ctx.respond(queue.list_queue(ctx))
+    queue_info = queue.list_queue(ctx)
+    thumbnail = discord.File("images/hotslogo.png", filename="hotslogo.png")
+    embed = discord.Embed(
+        title="Queue",
+        color=discord.Colour.blurple(),
+        description=f"Players in Queue: {len(queue.QUEUE)}",
+    )
+    embed.add_field(
+        name="Tanks <:tank:1113243868352233493>",
+        value=convert_list_to_string(queue_info.get("Tanks", [])),
+        inline=False,
+    )
+    embed.add_field(
+        name="Supports <:healer:1113243864166305922>",
+        value=convert_list_to_string(queue_info.get("Supports", [])),
+        inline=False,
+    )
+    embed.add_field(
+        name="Assassins <:assassin:1113243855442169897>",
+        value=convert_list_to_string(queue_info.get("Assassins", [])),
+        inline=False,
+    )
+    embed.add_field(
+        name="Offlanes <:bruiser:1113243858759860326>",
+        value=convert_list_to_string(queue_info.get("Offlanes", [])),
+        inline=False,
+    )
+    embed.set_thumbnail(url="attachment://hotslogo.png")
+    await ctx.respond(file=thumbnail, embed=embed)
 
 
 @bot.slash_command(name="leave", description="Leave the queue for a game")

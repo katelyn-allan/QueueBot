@@ -163,6 +163,7 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> List[List[Play
         game["team2"][player.role] = player
     # Select a random map
     game["map"] = random.choice(VALID_MAPS)
+    game["first_pick"] = random.choice([1, 2])
 
     return best_game
 
@@ -182,7 +183,6 @@ def start_game(ctx: ApplicationContext):
             "Not enough players on each role to make a valid game."
         )
     best_game = find_best_game(valid_games)
-    global CURRENT_GAME
     CURRENT_GAME = best_game
     # TODO: Move players into voice channels and stuff
     return CURRENT_GAME

@@ -18,18 +18,18 @@ def join_queue(ctx: ApplicationContext) -> tuple([int, int]):
     return ctx.user.id, len(QUEUE)
 
 
-def get_queue_data(ctx: ApplicationContext, queue=QUEUE) -> list:
+def get_queue_data(ctx: ApplicationContext, queue=QUEUE) -> Dict[str, List[str]]:
     """Lists the players in the queue and their roles"""
     # For each User in the queue list their roles in the current guild
     queue_data = {
         "Tanks": [],
         "Supports": [],
         "Assassins": [],
-        "Offlaners": [],
+        "Offlanes": [],
         "Tanks (Fill)": [],
         "Supports (Fill)": [],
         "Assassins (Fill)": [],
-        "Offlaners (Fill)": [],
+        "Offlanes (Fill)": [],
     }
     for user in queue:
         # For each of the user's roles that match the list in queue_data, append the user's name to the list, with (Fill) if they're a fill
@@ -41,15 +41,15 @@ def get_queue_data(ctx: ApplicationContext, queue=QUEUE) -> list:
             if role.id == ASSASSIN_ID:
                 queue_data["Assassins"].append(user.nick)
             if role.id == OFFLANE_ID:
-                queue_data["Offlaners"].append(user.nick)
+                queue_data["Offlanes"].append(user.nick)
             if role.id == TANK_FILL_ID:
-                queue_data["Tanks (Fill)"].append(user.nick)
+                queue_data["Tanks (Fill)"].append(user.nick + " (Fill)")
             if role.id == SUPPORT_FILL_ID:
-                queue_data["Supports (Fill)"].append(user.nick)
+                queue_data["Supports (Fill)"].append(user.nick + " (Fill)")
             if role.id == ASSASSIN_FILL_ID:
-                queue_data["Assassins (Fill)"].append(user.nick)
+                queue_data["Assassins (Fill)"].append(user.nick + " (Fill)")
             if role.id == OFFLANE_FILL_ID:
-                queue_data["Offlaners (Fill)"].append(user.nick)
+                queue_data["Offlanes (Fill)"].append(user.nick + " (Fill)")
 
     return queue_data
 
@@ -67,7 +67,7 @@ def list_queue(ctx: ApplicationContext) -> str:
         "Tanks": create_adjusted_list("Tanks", queue_data),
         "Supports": create_adjusted_list("Supports", queue_data),
         "Assassins": create_adjusted_list("Assassins", queue_data),
-        "Offlaners": create_adjusted_list("Offlaners", queue_data),
+        "Offlanes": create_adjusted_list("Offlanes", queue_data),
     }
     return adjusted_queue_data
 
