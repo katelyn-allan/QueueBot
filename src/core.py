@@ -127,5 +127,78 @@ async def slash_get_stats(ctx: ApplicationContext):
     await ctx.respond(str(player_stats.get_player_stats(ctx)))
 
 
+@bot.slash_command(name="setup", description="Get set up with the Queue Bot!")
+async def slash_setup(ctx: ApplicationContext):
+    # Use a discord.ui.Select menu to allow a user to assign roles
+    # to themselves
+    main_role_select = discord.ui.Select(
+        placeholder="Main Role (Select 1)",
+        min_values=1,
+        max_values=1,
+        options=[
+            discord.SelectOption(
+                label="Tank",
+                description="Tank",
+                emoji="<:tank:1113243868352233493>",
+                value="Tank",
+            ),
+            discord.SelectOption(
+                label="Support",
+                description="Support",
+                emoji="<:healer:1113243864166305922>",
+                value="Support",
+            ),
+            discord.SelectOption(
+                label="Assassin",
+                description="Assassin",
+                emoji="<:assassin:1113243855442169897>",
+                value="Assassin",
+            ),
+            discord.SelectOption(
+                label="Offlane",
+                description="Offlane",
+                emoji="<:bruiser:1113243858759860326>",
+                value="Offlane",
+            ),
+        ],
+    )
+    secondary_role_select = discord.ui.Select(
+        placeholder="Fill Roles (Select as many as you want)",
+        min_values=0,
+        max_values=4,
+        options=[
+            discord.SelectOption(
+                label="Tank",
+                description="Tank (Fill)",
+                emoji="<:tank:1113243868352233493>",
+                value="Tank",
+            ),
+            discord.SelectOption(
+                label="Support",
+                description="Support (Fill)",
+                emoji="<:healer:1113243864166305922>",
+                value="Support",
+            ),
+            discord.SelectOption(
+                label="Assassin",
+                description="Assassin (Fill)",
+                emoji="<:assassin:1113243855442169897>",
+                value="Assassin",
+            ),
+            discord.SelectOption(
+                label="Offlane",
+                description="Offlane (Fill)",
+                emoji="<:bruiser:1113243858759860326>",
+                value="Offlane",
+            ),
+        ],
+    )
+    row = discord.ActionRow(main_role_select, secondary_role_select)
+    await ctx.respond(
+        "Select your main role and any secondary roles you feel comfortable filling! Your main role will always be prioritized for matchmaking.",
+        components=[row],
+    )
+
+
 if __name__ == "__main__":
     bot.run(AUTH_TOKEN)
