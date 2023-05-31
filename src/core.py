@@ -58,22 +58,22 @@ async def slash_list_queue(ctx: ApplicationContext):
         description=f"Players in Queue: {len(queue.QUEUE)}",
     )
     embed.add_field(
-        name="Tanks <:tank:1113243868352233493>",
+        name=f"Tanks {TANK_EMOJI}",
         value=convert_list_to_string(queue_info.get("Tanks", [])),
         inline=False,
     )
     embed.add_field(
-        name="Supports <:healer:1113243864166305922>",
+        name=f"Supports {SUPPORT_EMOJI}",
         value=convert_list_to_string(queue_info.get("Supports", [])),
         inline=False,
     )
     embed.add_field(
-        name="Assassins <:assassin:1113243855442169897>",
+        name=f"Assassins {ASSASSIN_EMOJI}",
         value=convert_list_to_string(queue_info.get("Assassins", [])),
         inline=False,
     )
     embed.add_field(
-        name="Offlanes <:bruiser:1113243858759860326>",
+        name=f"Offlanes {OFFLANE_EMOJI}",
         value=convert_list_to_string(queue_info.get("Offlanes", [])),
         inline=False,
     )
@@ -139,25 +139,25 @@ async def slash_setup(ctx: ApplicationContext):
             discord.SelectOption(
                 label="Tank",
                 description="Tank",
-                emoji="<:tank:1113243868352233493>",
+                emoji=TANK_EMOJI,
                 value="Tank",
             ),
             discord.SelectOption(
                 label="Support",
                 description="Support",
-                emoji="<:healer:1113243864166305922>",
+                emoji=SUPPORT_EMOJI,
                 value="Support",
             ),
             discord.SelectOption(
                 label="Assassin",
                 description="Assassin",
-                emoji="<:assassin:1113243855442169897>",
+                emoji=ASSASSIN_EMOJI,
                 value="Assassin",
             ),
             discord.SelectOption(
                 label="Offlane",
                 description="Offlane",
-                emoji="<:bruiser:1113243858759860326>",
+                emoji=OFFLANE_EMOJI,
                 value="Offlane",
             ),
         ],
@@ -170,25 +170,25 @@ async def slash_setup(ctx: ApplicationContext):
             discord.SelectOption(
                 label="Tank",
                 description="Tank (Fill)",
-                emoji="<:tank:1113243868352233493>",
+                emoji=TANK_EMOJI,
                 value="Tank",
             ),
             discord.SelectOption(
                 label="Support",
                 description="Support (Fill)",
-                emoji="<:healer:1113243864166305922>",
+                emoji=SUPPORT_EMOJI,
                 value="Support",
             ),
             discord.SelectOption(
                 label="Assassin",
                 description="Assassin (Fill)",
-                emoji="<:assassin:1113243855442169897>",
+                emoji=ASSASSIN_EMOJI,
                 value="Assassin",
             ),
             discord.SelectOption(
                 label="Offlane",
                 description="Offlane (Fill)",
-                emoji="<:bruiser:1113243858759860326>",
+                emoji=OFFLANE_EMOJI,
                 value="Offlane",
             ),
         ],

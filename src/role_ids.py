@@ -12,3 +12,8 @@ SUPPORT_FILL_ID = int(os.environ.get("SUPPORT_FILL"))
 ASSASSIN_FILL_ID = int(os.environ.get("ASSASSIN_FILL"))
 OFFLANE_FILL_ID = int(os.environ.get("OFFLANE_FILL"))
 ADMIN_ID = int(os.environ.get("ADMIN"))
+
+TANK_EMOJI = str(os.environ.get("TANK_EMOJI"))
+SUPPORT_EMOJI = str(os.environ.get("SUPPORT_EMOJI"))
+ASSASSIN_EMOJI = str(os.environ.get("ASSASSIN_EMOJI"))
+OFFLANE_EMOJI = str(os.environ.get("OFFLANE_EMOJI"))
