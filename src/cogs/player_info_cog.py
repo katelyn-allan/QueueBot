@@ -28,7 +28,6 @@ class PlayerInfoCog(commands.Cog):
             color=discord.Colour.blurple(),
             description=f"Stats for {ctx.user.mention}",
         )
-        embed.set_thumbnail(url=ctx.author.avatar.url)
         embed.add_field(
             name=f"Tank {TANK_EMOJI}",
             value=self.convert_stat_dict_to_str_output(stats["tank"]),
@@ -49,6 +48,7 @@ class PlayerInfoCog(commands.Cog):
             value=self.convert_stat_dict_to_str_output(stats["offlane"]),
             inline=False,
         )
+        embed.set_thumbnail(url=ctx.author.display_avatar.url)
         await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
