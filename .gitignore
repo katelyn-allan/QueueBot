@@ -2,7 +2,7 @@
 player_data.json
 .python
 .python-version
-
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
