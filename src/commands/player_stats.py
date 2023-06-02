@@ -107,7 +107,7 @@ def instantiate_new_players(users: List[User]) -> None:
     update_player_data()
 
 
-def get_player_stats(ctx: ApplicationContext) -> dict:
+def get_player_stats(ctx: ApplicationContext) -> Dict[str, Dict[str, float]]:
     """Returns the player's stats"""
     if str(ctx.user.id) not in PLAYER_DATA:
         instantiate_new_players([ctx.user])

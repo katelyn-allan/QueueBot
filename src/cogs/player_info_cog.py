@@ -11,15 +11,52 @@ class PlayerInfoCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def convert_stat_dict_to_str_output(self, stats: Dict[str, float]) -> str:
+        """
+        Converts a player stats dict into a string output for reporting
+        """
+        output = ""
+        for key, value in stats.items():
+            output += f"**{key.replace('_', ' ').capitalize()}:** {value}\n"
+        return output
+
     @discord.slash_command(name="stats", description="Get your stats")
     async def slash_get_stats(self, ctx: ApplicationContext):
-        await ctx.respond(str(player_stats.get_player_stats(ctx)))
+        stats: Dict[str, Dict[str, float]] = player_stats.get_player_stats(ctx)
+        embed = discord.Embed(
+            title="Player Stats",
+            color=discord.Colour.blurple(),
+            description=f"Stats for {ctx.user.mention}",
+        )
+        embed.set_thumbnail(url=ctx.author.avatar.url)
+        embed.add_field(
+            name=f"Tank {TANK_EMOJI}",
+            value=self.convert_stat_dict_to_str_output(stats["tank"]),
+            inline=False,
+        )
+        embed.add_field(
+            name=f"Support {SUPPORT_EMOJI}",
+            value=self.convert_stat_dict_to_str_output(stats["support"]),
+            inline=False,
+        )
+        embed.add_field(
+            name=f"Assassin {ASSASSIN_EMOJI}",
+            value=self.convert_stat_dict_to_str_output(stats["assassin"]),
+            inline=False,
+        )
+        embed.add_field(
+            name=f"Offlane {OFFLANE_EMOJI}",
+            value=self.convert_stat_dict_to_str_output(stats["offlane"]),
+            inline=False,
+        )
+        await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
     async def slash_setup(self, ctx: ApplicationContext):
         await ctx.respond(
             "Select your main and secondary roles. Your main role will always be prioritized for match-making when possible.",
             view=RoleSelectView(),
+            ephemeral=True,
         )
 
 
