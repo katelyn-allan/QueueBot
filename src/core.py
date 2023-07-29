@@ -27,7 +27,7 @@ async def on_ready():
 
 
 if __name__ == "__main__":
+    bot.load_extension("cogs.game_cog")
     bot.load_extension("cogs.queue_cog")
     bot.load_extension("cogs.player_info_cog")
-    bot.load_extension("cogs.game_cog")
     bot.run(AUTH_TOKEN)

@@ -8,6 +8,7 @@ import itertools
 from scipy.optimize import linear_sum_assignment
 import random
 from exceptions import *
+from role_ids import *
 
 # TODO: Make this configurable?
 VALID_MAPS = [
@@ -158,9 +159,15 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> List[List[Play
 
     game = {"team1": {}, "team2": {}}
     for player in best_game[0]:
-        game["team1"][player.role] = player
+        if player.role == "assassin" and "asssassin" in game["team1"]:
+            game["team1"]["assassin2"] = player
+        else:
+            game["team1"][player.role] = player
     for player in best_game[1]:
-        game["team2"][player.role] = player
+        if player.role == "assassin" and "asssassin" in game["team2"]:
+            game["team2"]["assassin2"] = player
+        else:
+            game["team2"][player.role] = player
     # Select a random map
     game["map"] = random.choice(VALID_MAPS)
     game["first_pick"] = random.choice([1, 2])
@@ -186,3 +193,17 @@ def start_game(ctx: ApplicationContext):
     CURRENT_GAME = best_game
     # TODO: Move players into voice channels and stuff
     return CURRENT_GAME
+
+
+async def move_player_from_lobby_to_team_voice(
+    disc_user: User, team_number: int, ctx: ApplicationContext
+):
+    """
+    Moves a player from the lobby voice channel to the Team 1 voice channel.
+    """
+    lobby_voice_channel = ctx.guild.get_channel(LOBBY_CHANNEL_ID)
+    if team_number == 1:
+        team_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
+    elif team_number == 2:
+        team_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
+    await disc_user.move_to(team_voice_channel)

@@ -17,3 +17,7 @@ TANK_EMOJI = str(os.environ.get("TANK_EMOJI"))
 SUPPORT_EMOJI = str(os.environ.get("SUPPORT_EMOJI"))
 ASSASSIN_EMOJI = str(os.environ.get("ASSASSIN_EMOJI"))
 OFFLANE_EMOJI = str(os.environ.get("OFFLANE_EMOJI"))
+
+LOBBY_CHANNEL_ID = int(os.environ.get("LOBBY_CHANNEL_ID"))
+TEAM_1_CHANNEL_ID = int(os.environ.get("TEAM_1_CHANNEL_ID"))
+TEAM_2_CHANNEL_ID = int(os.environ.get("TEAM_2_CHANNEL_ID"))
