@@ -18,7 +18,9 @@ def join_queue(ctx: ApplicationContext) -> tuple([int, int]):
     return ctx.user.id, len(QUEUE)
 
 
-def get_queue_data(ctx: ApplicationContext, queue=QUEUE) -> Dict[str, List[str]]:
+def get_queue_data(
+    ctx: ApplicationContext, queue: List[User] = QUEUE
+) -> Dict[str, List[str]]:
     """Lists the players in the queue and their roles"""
     # For each User in the queue list their roles in the current guild
     queue_data = {
@@ -33,23 +35,24 @@ def get_queue_data(ctx: ApplicationContext, queue=QUEUE) -> Dict[str, List[str]]
     }
     for user in queue:
         # For each of the user's roles that match the list in queue_data, append the user's name to the list, with (Fill) if they're a fill
+        name = user.nick if user.nick else user.name
         for role in user.roles:
             if role.id == TANK_ID:
-                queue_data["Tanks"].append(user.nick)
+                queue_data["Tanks"].append(name)
             if role.id == SUPPORT_ID:
-                queue_data["Supports"].append(user.nick)
+                queue_data["Supports"].append(name)
             if role.id == ASSASSIN_ID:
-                queue_data["Assassins"].append(user.nick)
+                queue_data["Assassins"].append(name)
             if role.id == OFFLANE_ID:
-                queue_data["Offlanes"].append(user.nick)
+                queue_data["Offlanes"].append(name)
             if role.id == TANK_FILL_ID:
-                queue_data["Tanks (Fill)"].append(user.nick + " (Fill)")
+                queue_data["Tanks (Fill)"].append(name + " (Fill)")
             if role.id == SUPPORT_FILL_ID:
-                queue_data["Supports (Fill)"].append(user.nick + " (Fill)")
+                queue_data["Supports (Fill)"].append(name + " (Fill)")
             if role.id == ASSASSIN_FILL_ID:
-                queue_data["Assassins (Fill)"].append(user.nick + " (Fill)")
+                queue_data["Assassins (Fill)"].append(name + " (Fill)")
             if role.id == OFFLANE_FILL_ID:
-                queue_data["Offlanes (Fill)"].append(user.nick + " (Fill)")
+                queue_data["Offlanes (Fill)"].append(name + " (Fill)")
 
     return queue_data
 
