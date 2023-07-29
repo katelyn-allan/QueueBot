@@ -20,6 +20,35 @@ class GameCog(commands.Cog):
         except GameIsInProgressException:
             await ctx.respond("Game is already in progress!")
 
+    @discord.slash_command(name="test_game_display", description="Test game display")
+    async def slash_test_game_display(self, ctx: ApplicationContext):
+        banner = "https://static.icy-veins.com/images/heroes/tier-lists/maps/infernal-shrines.jpg"
+        embed = discord.Embed(
+            title="***Game Started***",
+            color=discord.Colour.blurple(),
+            description="INFERNAL SHRINES",
+        )
+        embed.set_author(
+            name=f"Started by <@{ctx.author.id}>",
+            icon_url=ctx.user.avatar,
+        )
+        embed.add_field(
+            name=f"Team 1 (FP)",
+            value=f"<@{ctx.author.id}>\n\n<@{ctx.author.id}>\n\n<@{ctx.author.id}>\n\n<@{ctx.author.id}>\n\n<@{ctx.author.id}>",
+            inline=True,
+        )
+        embed.add_field(
+            name="VS.",
+            value=f"{TANK_EMOJI}\n\n{SUPPORT_EMOJI}\n\n{ASSASSIN_EMOJI}\n\n{ASSASSIN_EMOJI}\n\n{OFFLANE_EMOJI}",
+        )
+        embed.add_field(
+            name=f"Team 2",
+            value=f"<@{ctx.author.id}>\n\n<@{ctx.author.id}>\n\n<@{ctx.author.id}>\n\n<@{ctx.author.id}>\n\n<@{ctx.author.id}>",
+            inline=True,
+        )
+        embed.set_image(url=banner)
+        await ctx.respond(embed=embed)
+
 
 def setup(bot: commands.Bot):
     bot.add_cog(GameCog(bot))
