@@ -15,17 +15,23 @@ class QueueCog(commands.Cog):
     async def slash_join_queue(self, ctx: ApplicationContext):
         try:
             user_id, queue_length = queue.join_queue(ctx)
+            plural = "s" if queue_length > 1 else ""
+            plural_2 = "is" if queue_length == 1 else "are"
         except AlreadyInQueueException as e:
-            await ctx.respond(f"<@{e.user.id}> is already in the queue!")
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description=f"<@{e.user.id}> is already in the queue!",
+            )
+            await ctx.respond(embed=embed)
             return
-        if queue_length == 1:
-            await ctx.respond(
-                f"<@{user_id}> has joined the queue! There is now {queue_length} player in the queue."
-            )
-        else:
-            await ctx.respond(
-                f"<@{user_id}> has joined the queue! There are now {queue_length} players in the queue."
-            )
+        embed = discord.Embed(
+            title="Queue",
+            color=discord.Colour.blurple(),
+            description=f"<@{user_id}> has joined the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+        )
+        await ctx.respond(embed=embed)
+        await queue.update_queue_channel(ctx)
 
     def convert_list_to_string(self, l: List[Any]) -> str:
         return_str = ""
@@ -69,17 +75,23 @@ class QueueCog(commands.Cog):
     async def slash_leave_queue(self, ctx: ApplicationContext):
         try:
             user_id, queue_length = queue.leave_queue(ctx)
+            plural = "s" if queue_length > 1 else ""
+            plural_2 = "is" if queue_length == 1 else "are"
         except PlayerNotFoundException as e:
-            await ctx.respond(f"<@{e.user.id}> is not in the queue!")
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description=f"<@{e.user.id}> is not in the queue!",
+            )
+            await ctx.respond(embed=embed)
             return
-        if queue_length == 1:
-            await ctx.respond(
-                f"<@{user_id}> has left the queue! There is now {queue_length} player in the queue."
-            )
-        else:
-            await ctx.respond(
-                f"<@{user_id}> has left the queue! There are now {queue_length} players in the queue."
-            )
+        embed = discord.Embed(
+            title="Queue",
+            color=discord.Colour.blurple(),
+            description=f"<@{user_id}> has left the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+        )
+        await ctx.respond(embed=embed)
+        await queue.update_queue_channel(ctx)
 
     @discord.slash_command(name="clear", description="Clear the queue")
     async def slash_clear_queue(self, ctx: ApplicationContext):
@@ -88,11 +100,20 @@ class QueueCog(commands.Cog):
             or ctx.user.guild_permissions.administrator
         ):
             queue.clear_queue()
-            await ctx.respond("Queue cleared!")
-        else:
-            await ctx.respond(
-                "Only Bot Engineers or Administrators can clear the queue!"
+            embed = discord.Embed(
+                title="Queue",
+                color=discord.Colour.blurple(),
+                description=f"Queue cleared!",
             )
+            await ctx.respond(embed=embed)
+            await queue.update_queue_channel(ctx)
+        else:
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="Only Bot Engineers or Administrators can clear the queue!",
+            )
+            await ctx.respond(embed=embed)
 
 
 def setup(bot: commands.Bot):

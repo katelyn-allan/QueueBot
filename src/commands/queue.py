@@ -10,6 +10,14 @@ load_dotenv()
 QUEUE: List[User] = []
 
 
+async def update_queue_channel(ctx: ApplicationContext) -> None:
+    """Updates the queue channel with the current queue"""
+    queue_channel = ctx.guild.get_channel(QUEUE_INFO_CHANNEL_ID)
+    plural = "s" if len(QUEUE) > 1 else ""
+    # Rename the queue channel to display the queue
+    await queue_channel.edit(name=f"QUEUE | {len(QUEUE)} player{plural}")
+
+
 def join_queue(ctx: ApplicationContext) -> tuple([int, int]):
     """Facilitates joining the queue, returns the user's id and the number of people in the queue"""
     if ctx.user in QUEUE:

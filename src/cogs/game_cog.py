@@ -14,22 +14,17 @@ class GameCog(commands.Cog):
     def convert_team_to_string(self, team: Dict[str, game.Player]) -> str:
         return_str = ""
         for role in ["tank", "support", "assassin", "assassin2", "offlane"]:
-            return_str += f"{team[role].id}\n\n"
+            return_str += f"<@{team[role].user.id}>\n\n"
         return return_str
 
     @discord.slash_command(name="start", description="Start a game")
     async def slash_start_game(self, ctx: ApplicationContext):
         try:
-            current_game = game.start_game(ctx)
+            current_game = await game.start_game(ctx)
             map: str = current_game["map"]
             team1: Dict[str, game.Player] = current_game["team1"]
             team2: Dict[str, game.Player] = current_game["team2"]
             fp = current_game["first_pick"]
-
-            for player in team1.values():
-                game.move_player_from_lobby_to_team_voice(player, 1, ctx)
-            for player in team2.values():
-                game.move_player_from_lobby_to_team_voice(player, 2, ctx)
 
             banner = f"https://static.icy-veins.com/images/heroes/tier-lists/maps/{map.replace(' ', '-').lower()}.jpg"
             embed = discord.Embed(
@@ -61,6 +56,20 @@ class GameCog(commands.Cog):
             await ctx.respond("Not enough players to start a game!")
         except GameIsInProgressException:
             await ctx.respond("Game is already in progress!")
+        except NotAdminException:
+            await ctx.respond("Only admins can start a game!")
+
+    @discord.slash_command(name="end", description="End a currently running game")
+    async def slash_end_game(self, ctx: ApplicationContext, winner: int):
+        try:
+            await game.end_game(ctx, winner)
+            await ctx.respond(
+                f"Game ended by <@{ctx.author.id}>! Team {winner} are the winners!"
+            )
+        except NoGameInProgressException:
+            await ctx.respond("No game is in progress!")
+        except NotAdminException:
+            await ctx.respond("Only admins can report game results!")
 
 
 def setup(bot: commands.Bot):

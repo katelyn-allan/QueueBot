@@ -1,7 +1,12 @@
 import trueskill
 from discord import ApplicationContext, User
 from commands.queue import QUEUE
-from commands.player_stats import PLAYER_DATA
+from commands.player_stats import (
+    PLAYER_DATA,
+    instantiate_new_players,
+    update_player_data,
+    RoleStat,
+)
 from typing import List, Dict
 import numpy as np
 import itertools
@@ -40,15 +45,23 @@ def convert_int_to_role(role_int: int) -> str:
         return "offlane"
 
 
-class Player(User):
+class Player:
     """
     Class to store a player's role and rating for use in the game
     """
 
     def __init__(self, user: User, role: str):
-        super().__init__(user.id, user.name, user.discriminator, user.avatar)
+        self.user = user
         self.role = role
-        self.rating = PLAYER_DATA[str(user.id)][role]["rating"]
+        self.rating = getattr(PLAYER_DATA[str(user.id)], role).rating
+
+    def report_player_data(self, win: bool):
+        """Updates the player's rating in the PLAYER_DATA dictionary"""
+        player_data_obj: RoleStat = getattr(PLAYER_DATA[str(self.user.id)], self.role)
+        player_data_obj.rating = self.rating
+        player_data_obj.games_played += 1
+        if win:
+            player_data_obj.games_won += 1
 
 
 def find_valid_games() -> List[List[Player]]:
@@ -57,6 +70,7 @@ def find_valid_games() -> List[List[Player]]:
     A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
     """
     players_in_queue: List[User] = QUEUE.copy()
+    instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)
     combinations_of_players: List[List[User]] = [
         list(comb) for comb in itertools.combinations(player_set, 10)
@@ -133,7 +147,9 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
     return two_teams
 
 
-def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> List[List[Player]]:
+def find_best_game(
+    valid_games: List[Dict[str, List[Player]]]
+) -> Dict[str, Dict[str, Player]]:
     """
     Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation.
     """
@@ -148,8 +164,8 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> List[List[Play
             team2 = combo[1]
             match_quality = trueskill.quality(
                 [
-                    (player.rating for player in team1),
-                    (player.rating for player in team2),
+                    [player.rating for player in team1],
+                    [player.rating for player in team2],
                 ]
             )
             # Check if match_quality is closer to 0.5 than the current best match_quality.
@@ -157,42 +173,56 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> List[List[Play
                 best_game = combo
                 best_quality = match_quality
 
-    game = {"team1": {}, "team2": {}}
+    game = {}
+    team1 = {}
+    team2 = {}
     for player in best_game[0]:
-        if player.role == "assassin" and "asssassin" in game["team1"]:
-            game["team1"]["assassin2"] = player
+        if player.role == "assassin" and "assassin" in team1:
+            team1["assassin2"] = player
         else:
-            game["team1"][player.role] = player
+            team1[player.role] = player
     for player in best_game[1]:
-        if player.role == "assassin" and "asssassin" in game["team2"]:
-            game["team2"]["assassin2"] = player
+        if player.role == "assassin" and "assassin" in team2:
+            team2["assassin2"] = player
         else:
-            game["team2"][player.role] = player
+            team2[player.role] = player
     # Select a random map
+    game["team1"] = team1
+    game["team2"] = team2
     game["map"] = random.choice(VALID_MAPS)
     game["first_pick"] = random.choice([1, 2])
 
-    return best_game
+    return game
 
 
 CURRENT_GAME = {}
 
 
-def start_game(ctx: ApplicationContext):
+async def start_game(ctx: ApplicationContext):
     """
     Takes the players from the queue and creates a game.
     """
-    if CURRENT_GAME != {}:
-        raise GameInProgressException("A game is already in progress.")
-    valid_games = find_valid_games()
-    if len(valid_games) == 0:
-        raise NoValidGameException(
-            "Not enough players on each role to make a valid game."
-        )
-    best_game = find_best_game(valid_games)
-    CURRENT_GAME = best_game
-    # TODO: Move players into voice channels and stuff
-    return CURRENT_GAME
+    if (
+        ADMIN_ID in [role.id for role in ctx.user.roles]
+        or ctx.user.guild_permissions.administrator
+    ):
+        global CURRENT_GAME
+        if CURRENT_GAME != {}:
+            raise GameInProgressException("A game is already in progress.")
+        valid_games = find_valid_games()
+        if len(valid_games) == 0:
+            raise NoValidGameException(
+                "Not enough players on each role to make a valid game."
+            )
+        best_game = find_best_game(valid_games)
+        CURRENT_GAME = best_game
+        for player in best_game["team_1"].values():
+            await move_player_from_lobby_to_team_voice(player.user, 1, ctx)
+        for player in best_game["team_2"].values():
+            await move_player_from_lobby_to_team_voice(player.user, 2, ctx)
+        return best_game
+    else:
+        raise NotAdminException("You must be an admin to start a game.")
 
 
 async def move_player_from_lobby_to_team_voice(
@@ -201,9 +231,69 @@ async def move_player_from_lobby_to_team_voice(
     """
     Moves a player from the lobby voice channel to the Team 1 voice channel.
     """
-    lobby_voice_channel = ctx.guild.get_channel(LOBBY_CHANNEL_ID)
     if team_number == 1:
         team_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
     elif team_number == 2:
         team_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
-    await disc_user.move_to(team_voice_channel)
+    # Only move the user if they are in the lobby.
+    if disc_user.voice and disc_user.channel.id == LOBBY_CHANNEL_ID:
+        await disc_user.move_to(team_voice_channel)
+
+
+async def move_all_team_players_to_lobby(ctx: ApplicationContext):
+    """
+    For the end of a game, moves all players that are in team_1 or team_2 back to the lobby.
+    """
+    lobby_voice_channel = ctx.guild.get_channel(LOBBY_CHANNEL_ID)
+    team_1_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
+    team_2_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
+    for member in team_1_voice_channel.members:
+        await member.move_to(lobby_voice_channel)
+    for member in team_2_voice_channel.members:
+        await member.move_to(lobby_voice_channel)
+
+
+async def end_game(ctx: ApplicationContext, winner: int):
+    """
+    If a game is currently running, ends the game and moves all players back to the lobby.
+    Winner: The team that won the game.
+    """
+    if (
+        ADMIN_ID in [role.id for role in ctx.user.roles]
+        or ctx.user.guild_permissions.administrator
+    ):
+        global CURRENT_GAME
+        if CURRENT_GAME == {}:
+            raise NoGameInProgressException("No game is currently in progress.")
+        if winner == 1:
+            winning_team = CURRENT_GAME["team1"]
+            losing_team = CURRENT_GAME["team2"]
+        elif winner == 2:
+            winning_team = CURRENT_GAME["team2"]
+            losing_team = CURRENT_GAME["team1"]
+
+        # Update the ratings of the players
+        winning_team_ratings = [player.rating for player in winning_team.values()]
+        losing_team_ratings = [player.rating for player in losing_team.values()]
+        winning_team_ratings, losing_team_ratings = trueskill.rate(
+            [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
+        )
+
+        all_players = list(winning_team.values()) + list(losing_team.values())
+
+        # Update players' ratings in the tracked player stats, and then re-add them to the queue
+        for player in all_players:
+            player.report_player_data()
+            QUEUE.append(player)
+
+        # Update the saved data to match the data in memory
+        update_player_data()
+
+        # Reset the current game.
+        CURRENT_GAME = {}
+
+        # Move everyone back to the lobby.
+        await move_all_team_players_to_lobby(ctx)
+
+    else:
+        raise NotAdminException("You must be an admin to report the end of a game.")

@@ -22,3 +22,11 @@ class NoValidGameException(Exception):
 
 class GameInProgressException(Exception):
     pass
+
+
+class NoGameInProgressException(Exception):
+    pass
+
+
+class NotAdminException(Exception):
+    pass
