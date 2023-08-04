@@ -216,9 +216,9 @@ async def start_game(ctx: ApplicationContext):
             )
         best_game = find_best_game(valid_games)
         CURRENT_GAME = best_game
-        for player in best_game["team_1"].values():
+        for player in best_game["team1"].values():
             await move_player_from_lobby_to_team_voice(player.user, 1, ctx)
-        for player in best_game["team_2"].values():
+        for player in best_game["team2"].values():
             await move_player_from_lobby_to_team_voice(player.user, 2, ctx)
         return best_game
     else:
@@ -235,9 +235,10 @@ async def move_player_from_lobby_to_team_voice(
         team_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
     elif team_number == 2:
         team_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
-    # Only move the user if they are in the lobby.
-    if disc_user.voice and disc_user.channel.id == LOBBY_CHANNEL_ID:
+    try:
         await disc_user.move_to(team_voice_channel)
+    except Exception:
+        pass
 
 
 async def move_all_team_players_to_lobby(ctx: ApplicationContext):
@@ -279,12 +280,11 @@ async def end_game(ctx: ApplicationContext, winner: int):
             [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
         )
 
-        all_players = list(winning_team.values()) + list(losing_team.values())
-
         # Update players' ratings in the tracked player stats, and then re-add them to the queue
-        for player in all_players:
-            player.report_player_data()
-            QUEUE.append(player)
+        for player in winning_team.values():
+            player.report_player_data(win=True)
+        for player in losing_team.values():
+            player.report_player_data(win=False)
 
         # Update the saved data to match the data in memory
         update_player_data()
@@ -297,3 +297,22 @@ async def end_game(ctx: ApplicationContext, winner: int):
 
     else:
         raise NotAdminException("You must be an admin to report the end of a game.")
+
+
+async def cancel_game(ctx: ApplicationContext):
+    """
+    If a game is currently running, ends the game and moves all players back to the lobby without reporting winners.
+    """
+    if (
+        ADMIN_ID in [role.id for role in ctx.user.roles]
+        or ctx.user.guild_permissions.administrator
+    ):
+        global CURRENT_GAME
+        if CURRENT_GAME == {}:
+            raise NoGameInProgressException("No game is currently in progress.")
+        # Move everyone back to the lobby.
+        CURRENT_GAME = {}
+        await move_all_team_players_to_lobby(ctx)
+
+    else:
+        raise NotAdminException("You must be an admin to cancel a game.")

@@ -53,23 +53,80 @@ class GameCog(commands.Cog):
             embed.set_image(url=banner)
             await ctx.respond(embed=embed)
         except NotEnoughPlayersException:
-            await ctx.respond("Not enough players to start a game!")
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="Not enough players to start a game!",
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
         except GameIsInProgressException:
-            await ctx.respond("Game is already in progress!")
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="Game is already in progress!",
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
         except NotAdminException:
-            await ctx.respond("Only admins can start a game!")
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="Only admins can start a game.",
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="end", description="End a currently running game")
     async def slash_end_game(self, ctx: ApplicationContext, winner: int):
         try:
             await game.end_game(ctx, winner)
+            embed = discord.Embed(
+                title="Game Ended",
+                color=discord.Colour.blurple(),
+                description=f"Game ended by {ctx.user.mention}! Team {winner} are the winners!",
+            )
             await ctx.respond(
-                f"Game ended by <@{ctx.author.id}>! Team {winner} are the winners!"
+                embed=embed,
             )
         except NoGameInProgressException:
-            await ctx.respond("No game is in progress!")
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="No game is currently in progress!",
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
         except NotAdminException:
-            await ctx.respond("Only admins can report game results!")
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="Only admins can report game results.",
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+
+    @discord.slash_command(name="cancel", description="Cancel a currently running game")
+    async def slash_cancel_game(self, ctx: ApplicationContext):
+        try:
+            await game.cancel_game(ctx)
+            embed = discord.Embed(
+                title="Game Cancelled",
+                color=discord.Colour.blurple(),
+                description=f"Game cancelled by {ctx.user.mention}!",
+            )
+            await ctx.respond(
+                embed=embed,
+            )
+        except NoGameInProgressException:
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="No game is currently in progress!",
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
+        except NotAdminException:
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="Only admins can cancel a game.",
+            )
+            await ctx.respond(embed=embed, ephemeral=True)
 
 
 def setup(bot: commands.Bot):

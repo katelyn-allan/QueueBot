@@ -10,19 +10,45 @@ load_dotenv()
 QUEUE: List[User] = []
 
 
-async def update_queue_channel(ctx: ApplicationContext) -> None:
+def populate_queue(ctx: ApplicationContext) -> None:
+    """Populates the queue with all players who have the Queued Role"""
+    queued_role = ctx.guild.get_role(QUEUED_ID)
+    print(queued_role)
+    for member in ctx.guild.members:
+        print(member.roles)
+        if queued_role in member.roles:
+            QUEUE.append(member)
+    print(f"Queue initialized with {len(QUEUE)}")
+    return len(QUEUE)
+
+
+async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> None:
     """Updates the queue channel with the current queue"""
     queue_channel = ctx.guild.get_channel(QUEUE_INFO_CHANNEL_ID)
-    plural = "s" if len(QUEUE) > 1 else ""
+    plural = "s" if queue_length != 1 else ""
+
+    print(queue_channel)
     # Rename the queue channel to display the queue
-    await queue_channel.edit(name=f"QUEUE | {len(QUEUE)} player{plural}")
+    await queue_channel.edit(name=f"QUEUE | {queue_length} player{plural}")
+    print("Successfully updated the queue channel")
 
 
 def join_queue(ctx: ApplicationContext) -> tuple([int, int]):
     """Facilitates joining the queue, returns the user's id and the number of people in the queue"""
     if ctx.user in QUEUE:
         raise AlreadyInQueueException(ctx.user)
+    # Raise an error if the user does not have a main role set
+    user_roles = [role.id for role in ctx.user.roles]
+    if (
+        TANK_ID not in user_roles
+        and SUPPORT_ID not in user_roles
+        and ASSASSIN_ID not in user_roles
+        and OFFLANE_ID not in user_roles
+    ):
+        raise NoMainRoleException(ctx.user)
     QUEUE.append(ctx.user)
+    # Assign the user the queued role
+
     return ctx.user.id, len(QUEUE)
 
 
@@ -54,13 +80,13 @@ def get_queue_data(
             if role.id == OFFLANE_ID:
                 queue_data["Offlanes"].append(name)
             if role.id == TANK_FILL_ID:
-                queue_data["Tanks (Fill)"].append(name + " (Fill)")
+                queue_data["Tanks (Fill)"].append(name)
             if role.id == SUPPORT_FILL_ID:
-                queue_data["Supports (Fill)"].append(name + " (Fill)")
+                queue_data["Supports (Fill)"].append(name)
             if role.id == ASSASSIN_FILL_ID:
-                queue_data["Assassins (Fill)"].append(name + " (Fill)")
+                queue_data["Assassins (Fill)"].append(name)
             if role.id == OFFLANE_FILL_ID:
-                queue_data["Offlanes (Fill)"].append(name + " (Fill)")
+                queue_data["Offlanes (Fill)"].append(name)
 
     return queue_data
 
@@ -88,9 +114,19 @@ def leave_queue(ctx: ApplicationContext) -> tuple([int, int]):
     if ctx.user not in QUEUE:
         raise PlayerNotFoundException(ctx.user)
     QUEUE.remove(ctx.user)
+
     return ctx.user.id, len(QUEUE)
 
 
 def clear_queue() -> None:
     """Clears the queue"""
     QUEUE.clear()
+
+
+async def remove_from_queue(ctx: ApplicationContext, user: User) -> tuple([int, int]):
+    """Removes a player from the queue"""
+    if user not in QUEUE:
+        raise PlayerNotFoundException(user)
+    QUEUE.remove(user)
+
+    return user.id, len(QUEUE)

@@ -12,8 +12,8 @@ class AlreadyInQueueException(Exception):
 
 
 class PlayerNotFoundException(Exception):
-    def __init__(self, player):
-        self.player = player
+    def __init__(self, user):
+        self.user = user
 
 
 class NoValidGameException(Exception):
@@ -30,3 +30,8 @@ class NoGameInProgressException(Exception):
 
 class NotAdminException(Exception):
     pass
+
+
+class NoMainRoleException(Exception):
+    def __init__(self, user):
+        self.user = user

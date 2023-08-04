@@ -18,7 +18,7 @@ from exceptions import *
 load_dotenv()
 AUTH_TOKEN = os.environ.get("AUTH_TOKEN")
 
-bot = discord.Bot()
+bot = discord.Bot(intents=discord.Intents.all())
 
 
 @bot.event
