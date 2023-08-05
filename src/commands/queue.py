@@ -67,7 +67,7 @@ def get_queue_data(
     }
     for user in queue:
         # For each of the user's roles that match the list in queue_data, append the user's name to the list, with (Fill) if they're a fill
-        name = user.nick if user.nick else user.name
+        name = user.display_name if user.display_name else user.name
         for role in user.roles:
             if role.id == TANK_ID:
                 queue_data["Tanks"].append(name)
@@ -89,24 +89,6 @@ def get_queue_data(
     return queue_data
 
 
-def create_adjusted_list(key: str, queue_data: Dict[str, List[int]]):
-    """Creates an adjusted list by combining the role and fill lists"""
-    return queue_data[key] + queue_data[key + " (Fill)"]
-
-
-def list_queue(ctx: ApplicationContext) -> str:
-    """Lists the players in the queue"""
-    queue_data: Dict[str, List[int]] = get_queue_data(ctx)
-    # Create adjusted lists by combining the role and fill lists
-    adjusted_queue_data = {
-        "Tanks": create_adjusted_list("Tanks", queue_data),
-        "Supports": create_adjusted_list("Supports", queue_data),
-        "Assassins": create_adjusted_list("Assassins", queue_data),
-        "Offlanes": create_adjusted_list("Offlanes", queue_data),
-    }
-    return adjusted_queue_data
-
-
 def leave_queue(ctx: ApplicationContext) -> tuple([int, int]):
     """Facilitates leaving the queue, returns the user's id and the number of people in the queue"""
     if ctx.user not in QUEUE:
@@ -121,7 +103,7 @@ def clear_queue() -> None:
     QUEUE.clear()
 
 
-def remove_from_queue(ctx: ApplicationContext, user: User) -> tuple([int, int]):
+def remove_from_queue(user: User) -> tuple([int, int]):
     """Removes a player from the queue"""
     if user not in QUEUE:
         raise PlayerNotFoundException(user)

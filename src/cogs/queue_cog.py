@@ -135,7 +135,7 @@ class QueueCog(commands.Cog):
             ADMIN_ID in [role.id for role in ctx.user.roles]
             or ctx.user.guild_permissions.administrator
         ):
-            await queue.clear_queue(ctx)
+            queue.clear_queue()
             queued_role = ctx.guild.get_role(QUEUED_ID)
             for member in ctx.guild.members:
                 if queued_role in member.roles:
@@ -162,7 +162,7 @@ class QueueCog(commands.Cog):
             or ctx.user.guild_permissions.administrator
         ):
             try:
-                user_id, queue_length = queue.remove_from_queue(ctx, user)
+                user_id, queue_length = queue.remove_from_queue(user)
                 # Remove the queued role from the user
                 queued_role = ctx.guild.get_role(QUEUED_ID)
                 await user.remove_roles(queued_role)
