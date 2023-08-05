@@ -9,7 +9,7 @@ from role_ids import *
 
 class QueueCog(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: discord.Bot = bot
 
     @discord.slash_command(name="join", description="Join the queue for a game")
     async def slash_join_queue(self, ctx: ApplicationContext):

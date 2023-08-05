@@ -123,7 +123,7 @@ def clear_queue() -> None:
     QUEUE.clear()
 
 
-async def remove_from_queue(ctx: ApplicationContext, user: User) -> tuple([int, int]):
+def remove_from_queue(ctx: ApplicationContext, user: User) -> tuple([int, int]):
     """Removes a player from the queue"""
     if user not in QUEUE:
         raise PlayerNotFoundException(user)

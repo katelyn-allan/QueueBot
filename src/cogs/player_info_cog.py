@@ -1,3 +1,4 @@
+import time
 import discord
 from discord import ApplicationContext
 import commands.player_stats as player_stats
@@ -9,7 +10,7 @@ from role_ids import *
 
 class PlayerInfoCog(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: discord.Bot = bot
 
     def convert_stat_dict_to_str_output(self, stats: Dict[str, float]) -> str:
         """
@@ -53,14 +54,26 @@ class PlayerInfoCog(commands.Cog):
 
     @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
     async def slash_setup(self, ctx: ApplicationContext):
+        main_role_view = MainRoleSelectView()
         await ctx.respond(
-            "Select your main and secondary roles. Your main role will always be prioritized for match-making when possible.",
-            view=RoleSelectView(),
+            "Select your main role. Your main role will always be prioritized for match-making when possible.",
+            view=main_role_view,
+            ephemeral=True,
+        )
+        await main_role_view.wait()
+        user_roles = ctx.user.roles
+        main_role = None
+        for role in user_roles:
+            if role.name in ["Tank", "Support", "Assassin", "Offlane"]:
+                main_role = role.name
+        await ctx.respond(
+            "Select your secondary roles. These will be used to fill out the rest of the team when your main role is not available.",
+            view=SecondaryRoleSelectView(main_role=main_role),
             ephemeral=True,
         )
 
 
-class RoleSelectView(discord.ui.View):
+class MainRoleSelectView(discord.ui.View):
     @discord.ui.select(
         placeholder="Main Role (Select 1)",
         min_values=1,
@@ -113,6 +126,13 @@ class RoleSelectView(discord.ui.View):
             content=f"Added {role_string} role to {interaction.user.mention}",
             view=self,
         )
+        self.stop()
+
+
+class SecondaryRoleSelectView(discord.ui.View):
+    def __init__(self, main_role: str):
+        super().__init__()
+        self.main_role = main_role
 
     @discord.ui.select(
         placeholder="Fill Roles (Select as many as you want)",
@@ -163,6 +183,9 @@ class RoleSelectView(discord.ui.View):
 
         # Add the roles the user selected.
         role_strings: List[str] = select.values
+        main_role_fill = f"{self.main_role} (Fill)"
+        if main_role_fill in role_strings:
+            role_strings.remove(main_role_fill)
         roles: List[discord.Role] = [
             discord.utils.get(interaction.guild.roles, name=role_string)
             for role_string in role_strings

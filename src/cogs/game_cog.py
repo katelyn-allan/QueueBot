@@ -9,7 +9,7 @@ from role_ids import *
 
 class GameCog(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: discord.Bot = bot
 
     def convert_team_to_string(self, team: Dict[str, game.Player]) -> str:
         return_str = ""
