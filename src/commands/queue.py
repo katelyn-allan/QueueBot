@@ -13,9 +13,7 @@ QUEUE: List[User] = []
 def populate_queue(ctx: ApplicationContext) -> None:
     """Populates the queue with all players who have the Queued Role"""
     queued_role = ctx.guild.get_role(QUEUED_ID)
-    print(queued_role)
     for member in ctx.guild.members:
-        print(member.roles)
         if queued_role in member.roles:
             QUEUE.append(member)
     print(f"Queue initialized with {len(QUEUE)}")
