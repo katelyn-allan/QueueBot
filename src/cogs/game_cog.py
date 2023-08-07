@@ -77,7 +77,13 @@ class GameCog(commands.Cog):
     @discord.slash_command(name="end", description="End a currently running game")
     async def slash_end_game(self, ctx: ApplicationContext, winner: int):
         try:
-            await game.end_game(ctx, winner)
+            game.end_game(ctx, winner)
+
+            # Move everyone back to the lobby.
+            try:
+                await game.move_all_team_players_to_lobby(ctx)
+            except:
+                pass
             embed = discord.Embed(
                 title="Game Ended",
                 color=discord.Colour.blurple(),
@@ -104,7 +110,11 @@ class GameCog(commands.Cog):
     @discord.slash_command(name="cancel", description="Cancel a currently running game")
     async def slash_cancel_game(self, ctx: ApplicationContext):
         try:
-            await game.cancel_game(ctx)
+            game.cancel_game(ctx)
+            try:
+                await game.move_all_team_players_to_lobby(ctx)
+            except:
+                pass
             embed = discord.Embed(
                 title="Game Cancelled",
                 color=discord.Colour.blurple(),

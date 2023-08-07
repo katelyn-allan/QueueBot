@@ -254,7 +254,7 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext):
         await member.move_to(lobby_voice_channel)
 
 
-async def end_game(ctx: ApplicationContext, winner: int):
+def end_game(ctx: ApplicationContext, winner: int):
     """
     If a game is currently running, ends the game and moves all players back to the lobby.
     Winner: The team that won the game.
@@ -292,14 +292,11 @@ async def end_game(ctx: ApplicationContext, winner: int):
         # Reset the current game.
         CURRENT_GAME = {}
 
-        # Move everyone back to the lobby.
-        await move_all_team_players_to_lobby(ctx)
-
     else:
         raise NotAdminException("You must be an admin to report the end of a game.")
 
 
-async def cancel_game(ctx: ApplicationContext):
+def cancel_game(ctx: ApplicationContext):
     """
     If a game is currently running, ends the game and moves all players back to the lobby without reporting winners.
     """
@@ -312,7 +309,6 @@ async def cancel_game(ctx: ApplicationContext):
             raise NoGameInProgressException("No game is currently in progress.")
         # Move everyone back to the lobby.
         CURRENT_GAME = {}
-        await move_all_team_players_to_lobby(ctx)
 
     else:
         raise NotAdminException("You must be an admin to cancel a game.")
