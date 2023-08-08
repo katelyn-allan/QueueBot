@@ -35,3 +35,13 @@ class NotAdminException(Exception):
 class NoMainRoleException(Exception):
     def __init__(self, user):
         self.user = user
+
+
+class NoGuildException(Exception):
+    pass
+
+
+class CouldNotFindChannelException(Exception):
+    def __init__(self, name: str, channel_id: int):
+        self.name = name
+        self.channel_id = channel_id

@@ -9,10 +9,13 @@ import commands.queue as queue
 import commands.player_stats as player_stats
 import commands.game as game
 from typing import List, Dict, Any
+import logging
 
 # import commands.game as game
 from role_ids import *
 from exceptions import *
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()

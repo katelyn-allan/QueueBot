@@ -1,5 +1,5 @@
 import trueskill
-from discord import ApplicationContext, User
+from discord import ApplicationContext, Member, User
 from commands.queue import QUEUE
 from commands.player_stats import (
     PLAYER_DATA,
@@ -43,6 +43,8 @@ def convert_int_to_role(role_int: int) -> str:
         return "assassin"
     elif role_int == 8 or role_int == 9:
         return "offlane"
+    else:
+        raise Exception("Invalid role int")
 
 
 class Player:
@@ -50,7 +52,7 @@ class Player:
     Class to store a player's role and rating for use in the game
     """
 
-    def __init__(self, user: User, role: str):
+    def __init__(self, user: Member, role: str):
         self.user = user
         self.role = role
         self.rating = getattr(PLAYER_DATA[str(user.id)], role).rating
@@ -64,15 +66,15 @@ class Player:
             player_data_obj.games_won += 1
 
 
-def find_valid_games() -> List[List[Player]]:
+def find_valid_games() -> List[Dict[str, List[Player]]]:
     """
     Finds all valid games of 10 players from the queue.
     A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
     """
-    players_in_queue: List[User] = QUEUE.copy()
+    players_in_queue: List[Member] = QUEUE.copy()
     instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)
-    combinations_of_players: List[List[User]] = [
+    combinations_of_players: List[List[Member]] = [
         list(comb) for comb in itertools.combinations(player_set, 10)
     ]
     valid_games = []
@@ -173,6 +175,9 @@ def find_best_game(
                 best_game = combo
                 best_quality = match_quality
 
+    if best_game is None or valid_games == []:
+        raise NoValidGameException("No valid game was found.")
+
     game = {}
     team1 = {}
     team2 = {}
@@ -202,6 +207,7 @@ async def start_game(ctx: ApplicationContext):
     """
     Takes the players from the queue and creates a game.
     """
+    assert type(ctx.user) is Member
     if (
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
@@ -226,15 +232,25 @@ async def start_game(ctx: ApplicationContext):
 
 
 async def move_player_from_lobby_to_team_voice(
-    disc_user: User, team_number: int, ctx: ApplicationContext
+    disc_user: Member, team_number: int, ctx: ApplicationContext
 ):
     """
     Moves a player from the lobby voice channel to the Team 1 voice channel.
     """
+    if ctx.guild is None:
+        raise NoGuildException()
     if team_number == 1:
         team_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
+        channel_id = TEAM_1_CHANNEL_ID
     elif team_number == 2:
         team_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
+        channel_id = TEAM_2_CHANNEL_ID
+    else:
+        raise Exception("Invalid team number")
+    if team_voice_channel is None:
+        raise CouldNotFindChannelException(
+            f"Team {team_number} Voice Channel", channel_id
+        )
     try:
         await disc_user.move_to(team_voice_channel)
     except Exception:
@@ -245,20 +261,31 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext):
     """
     For the end of a game, moves all players that are in team_1 or team_2 back to the lobby.
     """
+    if ctx.guild is None:
+        raise NoGuildException()
     lobby_voice_channel = ctx.guild.get_channel(LOBBY_CHANNEL_ID)
     team_1_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
     team_2_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
+    if lobby_voice_channel is None:
+        raise CouldNotFindChannelException("Lobby Voice Channel", LOBBY_CHANNEL_ID)
+    if team_1_voice_channel is None:
+        raise CouldNotFindChannelException("Team 1 Voice Channel", TEAM_1_CHANNEL_ID)
+    if team_2_voice_channel is None:
+        raise CouldNotFindChannelException("Team 2 Voice Channel", TEAM_2_CHANNEL_ID)
     for member in team_1_voice_channel.members:
         await member.move_to(lobby_voice_channel)
     for member in team_2_voice_channel.members:
         await member.move_to(lobby_voice_channel)
 
 
-def end_game(ctx: ApplicationContext, winner: int):
+def end_game(ctx: ApplicationContext, winner: str):
     """
     If a game is currently running, ends the game and moves all players back to the lobby.
     Winner: The team that won the game.
     """
+    if ctx.guild is None:
+        raise NoGuildException()
+    assert type(ctx.user) is Member
     if (
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
@@ -266,13 +293,14 @@ def end_game(ctx: ApplicationContext, winner: int):
         global CURRENT_GAME
         if CURRENT_GAME == {}:
             raise NoGameInProgressException("No game is currently in progress.")
-        if winner == 1:
+        if winner == "team 1":
             winning_team = CURRENT_GAME["team1"]
             losing_team = CURRENT_GAME["team2"]
-        elif winner == 2:
+        elif winner == "team 2":
             winning_team = CURRENT_GAME["team2"]
             losing_team = CURRENT_GAME["team1"]
-
+        else:
+            raise Exception("Invalid winner")
         # Update the ratings of the players
         winning_team_ratings = [player.rating for player in winning_team.values()]
         losing_team_ratings = [player.rating for player in losing_team.values()]
@@ -300,6 +328,9 @@ def cancel_game(ctx: ApplicationContext):
     """
     If a game is currently running, ends the game and moves all players back to the lobby without reporting winners.
     """
+    if ctx.guild is None:
+        raise NoGuildException()
+    assert type(ctx.user) is Member
     if (
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator

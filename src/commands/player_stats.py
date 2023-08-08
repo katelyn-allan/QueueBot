@@ -1,7 +1,7 @@
 import trueskill
 import json
 from typing import Any, Dict, List
-from discord import ApplicationContext, User
+from discord import ApplicationContext, Member, User
 from exceptions import *
 
 
@@ -100,7 +100,7 @@ def update_player_data() -> None:
     load_player_data()
 
 
-def instantiate_new_players(users: List[User]) -> None:
+def instantiate_new_players(users: List[Member]) -> None:
     for user in users:
         if user.id not in PLAYER_DATA:
             PLAYER_DATA[str(user.id)] = PlayerStats()
@@ -109,6 +109,7 @@ def instantiate_new_players(users: List[User]) -> None:
 
 def get_player_stats(ctx: ApplicationContext) -> Dict[str, Dict[str, float]]:
     """Returns the player's stats"""
+    assert type(ctx.user) is Member
     if str(ctx.user.id) not in PLAYER_DATA:
         instantiate_new_players([ctx.user])
     user_data = PLAYER_DATA[str(ctx.user.id)]
