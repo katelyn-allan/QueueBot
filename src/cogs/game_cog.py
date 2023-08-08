@@ -1,5 +1,5 @@
 import discord
-from discord import ApplicationContext
+from discord import ApplicationContext, Option, option
 import commands.game as game
 from exceptions import *
 from typing import List, Dict, Any
@@ -75,7 +75,13 @@ class GameCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="end", description="End a currently running game")
-    async def slash_end_game(self, ctx: ApplicationContext, winner: int):
+    @option(
+        "winner",
+        str,
+        description="The team that won the game",
+        choices=["team 1", "team 2"],
+    )
+    async def slash_end_game(self, ctx: ApplicationContext, winner: str):
         try:
             game.end_game(ctx, winner)
 

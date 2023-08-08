@@ -151,7 +151,7 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
 
 def find_best_game(
     valid_games: List[Dict[str, List[Player]]]
-) -> Dict[str, Dict[str, Player]]:
+) -> Dict[str, Dict[str, Player] | str]:
     """
     Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation.
     """
@@ -203,7 +203,7 @@ def find_best_game(
 CURRENT_GAME = {}
 
 
-async def start_game(ctx: ApplicationContext):
+async def start_game(ctx: ApplicationContext) -> Dict[str, Dict[str, Player] | str]:
     """
     Takes the players from the queue and creates a game.
     """
