@@ -10,7 +10,7 @@ class RoleStat:
     Tracks a player's stats across a specific role
     """
 
-    def __init__(self, init_dict: Dict[str, Any] = None):
+    def __init__(self, init_dict: Dict[str, Any] | None = None):
         if init_dict:
             self.games_played: int = init_dict["games_played"]
             self.games_won: int = init_dict["games_won"]
@@ -22,7 +22,7 @@ class RoleStat:
             self.games_won: int = 0
             self.rating = trueskill.Rating()
 
-    def convert_to_dict(self) -> Dict[str, Any]:
+    def convert_to_dict(self) -> Dict[str, float | str]:
         """Converts all fields to dictionaries to allow dumping to json"""
         outp = {}
         outp["games_played"] = self.games_played
@@ -33,7 +33,7 @@ class RoleStat:
         }
         return outp
 
-    def get_stats(self) -> Dict[str, float]:
+    def get_stats(self) -> Dict[str, float | str]:
         """Returns a dictionary of the player's stats"""
         if self.games_played != 0:
             return {
@@ -54,7 +54,7 @@ class PlayerStats:
     Container class for player stats across multiple roles
     """
 
-    def __init__(self, init_dict: Dict[str, Any] = None):
+    def __init__(self, init_dict: Dict[str, Any] | None = None):
         if init_dict:
             self.tank = RoleStat(init_dict["tank"])
             self.support = RoleStat(init_dict["support"])
@@ -66,7 +66,7 @@ class PlayerStats:
             self.assassin = RoleStat()
             self.offlane = RoleStat()
 
-    def convert_to_dict(self) -> Dict[str, Any]:
+    def convert_to_dict(self) -> Dict[str, float | str]:
         """Converts all fields to dictionaries to allow dumping to json"""
         outp = {}
         outp["tank"] = self.tank.convert_to_dict()
@@ -94,8 +94,9 @@ def update_player_data() -> None:
     """Updates player_data.json with the current data in memory"""
     with open("player_data.json", "w") as f:
         data_copy = PLAYER_DATA.copy()
+        outp_dict: Dict[str, Dict[str, float | str]] = {}
         for key, value in data_copy.items():
-            data_copy[key] = value.convert_to_dict()
+            outp_dict[key] = value.convert_to_dict()
         json.dump(data_copy, f)
     load_player_data()
 
