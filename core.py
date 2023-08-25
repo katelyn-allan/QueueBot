@@ -12,7 +12,7 @@ from typing import List, Dict, Any
 import logging
 
 # import commands.game as game
-from role_ids import *
+from env_load import *
 from exceptions import *
 
 logger = logging.getLogger(__name__)

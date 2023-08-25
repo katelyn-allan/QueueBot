@@ -4,7 +4,7 @@ import commands.game as game
 from exceptions import *
 from typing import List, Dict, Any
 from discord.ext import commands
-from role_ids import *
+from env_load import *
 
 
 class GameCog(commands.Cog):

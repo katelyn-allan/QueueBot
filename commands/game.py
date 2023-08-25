@@ -11,7 +11,7 @@ import itertools
 from scipy.optimize import linear_sum_assignment
 import random
 from exceptions import *
-from role_ids import *
+from env_load import *
 
 
 def convert_int_to_role(role_int: int) -> str:

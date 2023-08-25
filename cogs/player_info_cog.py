@@ -5,7 +5,7 @@ import commands.player_stats as player_stats
 from exceptions import *
 from typing import List, Dict, Any
 from discord.ext import commands
-from role_ids import *
+from env_load import *
 
 
 class PlayerInfoCog(commands.Cog):
