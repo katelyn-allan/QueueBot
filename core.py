@@ -1,17 +1,7 @@
-import sys
-
-sys.path.append("src")
 import discord
 import os
 from dotenv import load_dotenv
-from discord import ApplicationContext
-import commands.queue as queue
-import commands.player_stats as player_stats
-import commands.game as game
-from typing import List, Dict, Any
 import logging
-
-# import commands.game as game
 from env_load import *
 from exceptions import *
 
