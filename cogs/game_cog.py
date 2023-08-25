@@ -21,10 +21,13 @@ class GameCog(commands.Cog):
     async def slash_start_game(self, ctx: ApplicationContext):
         try:
             current_game = await game.start_game(ctx)
-            map: str = current_game["map"]
-            team1: Dict[str, game.Player] = current_game["team_1"]
-            team2: Dict[str, game.Player] = current_game["team_2"]
-            fp = current_game["first_pick"]
+            if current_game:
+                current_game = game.CurrentGame()
+                print(current_game)
+                map: str = current_game.map
+                team1: Dict[str, game.Player] = current_game.team_1
+                team2: Dict[str, game.Player] = current_game.team_2
+                fp = current_game.first_pick
 
             banner = f"https://static.icy-veins.com/images/heroes/tier-lists/maps/{map.replace(' ', '-').lower()}.jpg"
             embed = discord.Embed(

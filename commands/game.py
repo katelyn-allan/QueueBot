@@ -74,10 +74,15 @@ class CurrentGame:
     def __new__(cls):
         if not hasattr(cls, "instance"):
             cls.instance = super(CurrentGame, cls).__new__(cls)
+            cls.instance.initialized = False
         return cls.instance
 
     def __init__(self):
-        self.reset_state()
+        if hasattr(self, "initialized") and self.initialized:
+            return
+        else:
+            self.initialized = True
+            self.reset_state()
 
     def assign_game(
         self: Self,
@@ -231,7 +236,7 @@ def find_best_game(
     return {"team1": team1, "team2": team2}
 
 
-async def start_game(ctx: ApplicationContext) -> Dict[str, Dict[str, Player] | str]:
+async def start_game(ctx: ApplicationContext) -> bool:
     """
     Takes the players from the queue and creates a game.
     """
@@ -254,7 +259,7 @@ async def start_game(ctx: ApplicationContext) -> Dict[str, Dict[str, Player] | s
             await move_player_from_lobby_to_team_voice(player.user, 1, ctx)
         for player in best_game["team2"].values():
             await move_player_from_lobby_to_team_voice(player.user, 2, ctx)
-        return CurrentGame().__dict__
+        return True
     else:
         raise NotAdminException("You must be an admin to start a game.")
 
