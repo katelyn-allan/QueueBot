@@ -2,33 +2,16 @@ import trueskill
 from discord import ApplicationContext, Member, User
 from commands.queue import QUEUE
 from commands.player_stats import (
-    PLAYER_DATA,
-    instantiate_new_players,
-    update_player_data,
+    PlayerData,
     RoleStat,
 )
-from typing import List, Dict
+from typing import List, Dict, Self
 import numpy as np
 import itertools
 from scipy.optimize import linear_sum_assignment
 import random
 from exceptions import *
 from role_ids import *
-
-# TODO: Make this configurable?
-VALID_MAPS = [
-    "Alterac Pass",
-    "Garden of Terror",
-    "Volskaya Foundry",
-    "Towers of Doom",
-    "Infernal Shrines",
-    "Battlefield of Eternity",
-    "Tomb of the Spider Queen",
-    "Sky Temple",
-    "Dragon Shire",
-    "Cursed Hollow",
-    "Braxis Holdout",
-]
 
 
 def convert_int_to_role(role_int: int) -> str:
@@ -55,15 +38,64 @@ class Player:
     def __init__(self, user: Member, role: str):
         self.user = user
         self.role = role
-        self.rating = getattr(PLAYER_DATA[str(user.id)], role).rating
+        self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
 
     def report_player_data(self, win: bool):
         """Updates the player's rating in the PLAYER_DATA dictionary"""
-        player_data_obj: RoleStat = getattr(PLAYER_DATA[str(self.user.id)], self.role)
+        player_data_obj: RoleStat = getattr(
+            PlayerData().player_data[str(self.user.id)], self.role
+        )
+        print(
+            f"I think {self.user.display_name}'s player_data object is {player_data_obj}"
+        )
         player_data_obj.rating = self.rating
         player_data_obj.games_played += 1
         if win:
             player_data_obj.games_won += 1
+
+
+class CurrentGame:
+    # TODO: Make this configurable?
+    valid_maps = [
+        "Alterac Pass",
+        "Garden of Terror",
+        "Volskaya Foundry",
+        "Towers of Doom",
+        "Infernal Shrines",
+        "Battlefield of Eternity",
+        "Tomb of the Spider Queen",
+        "Sky Temple",
+        "Dragon Shire",
+        "Cursed Hollow",
+        # "Braxis Holdout",
+    ]
+
+    # Instantiate a singleton class, CurrentGame
+    def __new__(cls):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(CurrentGame, cls).__new__(cls)
+        return cls.instance
+
+    def __init__(self):
+        self.reset_state()
+
+    def assign_game(
+        self: Self,
+        team_1: Dict[str, Player],
+        team_2: Dict[str, Player],
+    ) -> None:
+        self.team_1 = team_1
+        self.team_2 = team_2
+        self.map = random.choice(self.valid_maps)
+        self.first_pick = random.choice([1, 2])
+        self.in_progress = True
+
+    def reset_state(self: Self) -> None:
+        self.team_1 = {}
+        self.team_2 = {}
+        self.map = None
+        self.first_pick = None
+        self.in_progress = False
 
 
 def find_valid_games() -> List[Dict[str, List[Player]]]:
@@ -72,7 +104,7 @@ def find_valid_games() -> List[Dict[str, List[Player]]]:
     A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
     """
     players_in_queue: List[Member] = QUEUE.copy()
-    instantiate_new_players(players_in_queue)
+    PlayerData().instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)
     combinations_of_players: List[List[Member]] = [
         list(comb) for comb in itertools.combinations(player_set, 10)
@@ -146,6 +178,10 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
             if not any(player in team2 for player in team1):
                 if [team2, team1] not in two_teams:
                     two_teams.append([team1, team2])
+
+    random.shuffle(two_teams)
+    random.shuffle(two_teams)
+    random.shuffle(two_teams)
     return two_teams
 
 
@@ -160,6 +196,7 @@ def find_best_game(
     for game in valid_games:
         # Find every permutation of team comp, in which a valid team has 5 players: One tank, One Support, Two Assassins, and One Offlane.
         team_combos: List[List[List[Player]]] = get_team_combinations(game)
+        print(f"Found {len(team_combos)} configurations of players for this game group")
         # TODO: Should we instead compare match quality within team_combos and then take a random game?
         for combo in team_combos:
             team1 = combo[0]
@@ -178,7 +215,6 @@ def find_best_game(
     if best_game is None or valid_games == []:
         raise NoValidGameException("No valid game was found.")
 
-    game = {}
     team1 = {}
     team2 = {}
     for player in best_game[0]:
@@ -191,16 +227,8 @@ def find_best_game(
             team2["assassin2"] = player
         else:
             team2[player.role] = player
-    # Select a random map
-    game["team1"] = team1
-    game["team2"] = team2
-    game["map"] = random.choice(VALID_MAPS)
-    game["first_pick"] = random.choice([1, 2])
 
-    return game
-
-
-CURRENT_GAME = {}
+    return {"team1": team1, "team2": team2}
 
 
 async def start_game(ctx: ApplicationContext) -> Dict[str, Dict[str, Player] | str]:
@@ -212,21 +240,21 @@ async def start_game(ctx: ApplicationContext) -> Dict[str, Dict[str, Player] | s
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
     ):
-        global CURRENT_GAME
-        if CURRENT_GAME != {}:
+        if CurrentGame().in_progress:
             raise GameInProgressException("A game is already in progress.")
         valid_games = find_valid_games()
+        print(f"Found {len(valid_games)} valid game configurations...")
         if len(valid_games) == 0:
             raise NoValidGameException(
                 "Not enough players on each role to make a valid game."
             )
         best_game = find_best_game(valid_games)
-        CURRENT_GAME = best_game
+        CurrentGame().assign_game(best_game["team1"], best_game["team2"])
         for player in best_game["team1"].values():
             await move_player_from_lobby_to_team_voice(player.user, 1, ctx)
         for player in best_game["team2"].values():
             await move_player_from_lobby_to_team_voice(player.user, 2, ctx)
-        return best_game
+        return CurrentGame().__dict__
     else:
         raise NotAdminException("You must be an admin to start a game.")
 
@@ -290,35 +318,45 @@ def end_game(ctx: ApplicationContext, winner: str):
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
     ):
-        global CURRENT_GAME
-        if CURRENT_GAME == {}:
+        if not CurrentGame().in_progress:
             raise NoGameInProgressException("No game is currently in progress.")
         if winner == "team 1":
-            winning_team = CURRENT_GAME["team1"]
-            losing_team = CURRENT_GAME["team2"]
+            winning_team = CurrentGame().team_1
+            losing_team = CurrentGame().team_2
         elif winner == "team 2":
-            winning_team = CURRENT_GAME["team2"]
-            losing_team = CURRENT_GAME["team1"]
+            winning_team = CurrentGame().team_2
+            losing_team = CurrentGame().team_1
         else:
             raise Exception("Invalid winner")
+
+        print(f"\nI think the winning team is {winning_team}\n")
+        print(f"\nI think the losing team is {losing_team}\n")
         # Update the ratings of the players
         winning_team_ratings = [player.rating for player in winning_team.values()]
+        print(f"\nWinning team ratings: {winning_team_ratings}")
         losing_team_ratings = [player.rating for player in losing_team.values()]
+        print(f"\nLosing team ratings: {losing_team_ratings}")
         winning_team_ratings, losing_team_ratings = trueskill.rate(
             [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
         )
+        print(f"\nUpdated Winning team ratings: {winning_team_ratings}")
+        print(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
         # Update players' ratings in the tracked player stats, and then re-add them to the queue
         for player in winning_team.values():
+            print(f"Updating player {player.user.display_name}...")
             player.report_player_data(win=True)
         for player in losing_team.values():
+            print(f"Updating player {player.user.display_name}...")
             player.report_player_data(win=False)
 
         # Update the saved data to match the data in memory
-        update_player_data()
+        print("Running update_player_data()...")
+        PlayerData().update_player_data()
+        print("Player data updated!")
 
         # Reset the current game.
-        CURRENT_GAME = {}
+        CurrentGame().reset_state()
 
     else:
         raise NotAdminException("You must be an admin to report the end of a game.")
@@ -335,11 +373,10 @@ def cancel_game(ctx: ApplicationContext):
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
     ):
-        global CURRENT_GAME
-        if CURRENT_GAME == {}:
+        if not CurrentGame().in_progress:
             raise NoGameInProgressException("No game is currently in progress.")
         # Move everyone back to the lobby.
-        CURRENT_GAME = {}
+        CurrentGame().reset_state()
 
     else:
         raise NotAdminException("You must be an admin to cancel a game.")

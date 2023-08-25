@@ -22,8 +22,8 @@ class GameCog(commands.Cog):
         try:
             current_game = await game.start_game(ctx)
             map: str = current_game["map"]
-            team1: Dict[str, game.Player] = current_game["team1"]
-            team2: Dict[str, game.Player] = current_game["team2"]
+            team1: Dict[str, game.Player] = current_game["team_1"]
+            team2: Dict[str, game.Player] = current_game["team_2"]
             fp = current_game["first_pick"]
 
             banner = f"https://static.icy-veins.com/images/heroes/tier-lists/maps/{map.replace(' ', '-').lower()}.jpg"
@@ -95,9 +95,7 @@ class GameCog(commands.Cog):
                 color=discord.Colour.blurple(),
                 description=f"Game ended by {ctx.user.mention}! Team {winner} are the winners!",
             )
-            await ctx.respond(
-                embed=embed,
-            )
+            await ctx.respond(embed=embed)
         except NoGameInProgressException:
             embed = discord.Embed(
                 title="Error",
@@ -126,9 +124,7 @@ class GameCog(commands.Cog):
                 color=discord.Colour.blurple(),
                 description=f"Game cancelled by {ctx.user.mention}!",
             )
-            await ctx.respond(
-                embed=embed,
-            )
+            await ctx.respond(embed=embed)
         except NoGameInProgressException:
             embed = discord.Embed(
                 title="Error",
