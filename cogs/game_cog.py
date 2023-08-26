@@ -8,7 +8,7 @@ from discord.ext import commands
 
 import commands.game as game
 from exceptions import (
-    CouldNotFindChannelException,
+    ChannelNotFoundException,
     GameInProgressException,
     NoGameInProgressException,
     NoGuildException,
@@ -101,7 +101,7 @@ class GameCog(commands.Cog):
             # Move everyone back to the lobby.
             try:
                 await game.move_all_team_players_to_lobby(ctx)
-            except (NoGuildException, CouldNotFindChannelException):
+            except (NoGuildException, ChannelNotFoundException):
                 pass
             embed = discord.Embed(
                 title="Game Ended",
@@ -130,7 +130,7 @@ class GameCog(commands.Cog):
             game.cancel_game(ctx)
             try:
                 await game.move_all_team_players_to_lobby(ctx)
-            except (NoGuildException, CouldNotFindChannelException):
+            except (NoGuildException, ChannelNotFoundException):
                 pass
             embed = discord.Embed(
                 title="Game Cancelled",

@@ -2,10 +2,6 @@ class NotEnoughPlayersException(Exception):
     pass
 
 
-class GameIsInProgressException(Exception):
-    pass
-
-
 class AlreadyInQueueException(Exception):
     def __init__(self, user):
         self.user = user
@@ -41,7 +37,7 @@ class NoGuildException(Exception):
     pass
 
 
-class CouldNotFindChannelException(Exception):
+class ChannelNotFoundException(Exception):
     def __init__(self, name: str, channel_id: int):
         self.name = name
         self.channel_id = channel_id
