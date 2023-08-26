@@ -135,7 +135,7 @@ class QueueCog(commands.Cog):
             description=f"<@{user_id}> has left the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
-        await queue.update_queue_channel(ctx, queue_length)
+        await queue.update_queue_channel(ctx.guild)
 
     @discord.slash_command(name="clear", description="Clear the queue")
     async def slash_clear_queue(self: Self, ctx: ApplicationContext) -> None:
@@ -152,7 +152,7 @@ class QueueCog(commands.Cog):
                 description="Queue cleared!",
             )
             await ctx.respond(embed=embed)
-            await queue.update_queue_channel(ctx, 0)
+            await queue.update_queue_channel(ctx.guild)
         else:
             embed = discord.Embed(
                 title="Error",
@@ -186,32 +186,12 @@ class QueueCog(commands.Cog):
                 description=f"<@{user_id}> has been removed from the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
             )
             await ctx.respond(embed=embed)
-            await queue.update_queue_channel(ctx, queue_length)
+            await queue.update_queue_channel(ctx.guild)
         else:
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),
                 description="Only Bot Engineers or Administrators can clear the queue!",
-            )
-            await ctx.respond(embed=embed, ephemeral=True)
-
-    @discord.slash_command(name="initialize", description="Initialize the bot")
-    async def slash_initialize(self: Self, ctx: ApplicationContext) -> None:
-        """Initialize the bot and populate the queue."""
-        if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
-            queue_len = queue.populate_queue(ctx)
-            await queue.update_queue_channel(ctx, queue_len)
-            embed = discord.Embed(
-                title="Queue",
-                color=discord.Colour.blurple(),
-                description="Bot initialized and queue populated.",
-            )
-            await ctx.respond(embed=embed, ephemeral=True)
-        else:
-            embed = discord.Embed(
-                title="Error",
-                color=discord.Colour.red(),
-                description="Only Bot Engineers or Administrators can initialize the bot!",
             )
             await ctx.respond(embed=embed, ephemeral=True)
 
