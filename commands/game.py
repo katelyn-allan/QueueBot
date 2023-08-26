@@ -1,17 +1,22 @@
-import trueskill
-from discord import ApplicationContext, Member, User
-from commands.queue import QUEUE
-from commands.player_stats import (
-    PlayerData,
-    RoleStat,
-)
-from typing import List, Dict, Self
-import numpy as np
 import itertools
-from scipy.optimize import linear_sum_assignment
 import random
-from exceptions import *
-from env_load import *
+
+import numpy as np
+import trueskill
+from discord import ApplicationContext, Forbidden, HTTPException, Member
+from scipy.optimize import linear_sum_assignment
+
+from commands.player_stats import PlayerData, RoleStat
+from commands.queue import QUEUE
+from env_load import ADMIN_ID, LOBBY_CHANNEL_ID, TEAM_1_CHANNEL_ID, TEAM_2_CHANNEL_ID
+from exceptions import (
+    ChannelNotFoundException,
+    GameInProgressException,
+    NoGameInProgressException,
+    NoGuildException,
+    NotAdminException,
+    NoValidGameException,
+)
 
 
 def convert_int_to_role(role_int: int) -> str:
@@ -27,7 +32,7 @@ def convert_int_to_role(role_int: int) -> str:
     elif role_int == 8 or role_int == 9:
         return "offlane"
     else:
-        raise Exception("Invalid role int")
+        raise ValueError("Invalid role int. Must be a value between 0 and 9.")
 
 
 class Player:
@@ -78,6 +83,11 @@ class CurrentGame:
         return cls.instance
 
     def __init__(self):
+        self.team_1: dict[str, Player]
+        self.team_2: dict[str, Player]
+        self.map: str
+        self.first_pick: int
+        self.in_progress: bool
         if hasattr(self, "initialized") and self.initialized:
             return
         else:
@@ -85,9 +95,9 @@ class CurrentGame:
             self.reset_state()
 
     def assign_game(
-        self: Self,
-        team_1: Dict[str, Player],
-        team_2: Dict[str, Player],
+        self,
+        team_1: dict[str, Player],
+        team_2: dict[str, Player],
     ) -> None:
         self.team_1 = team_1
         self.team_2 = team_2
@@ -95,7 +105,7 @@ class CurrentGame:
         self.first_pick = random.choice([1, 2])
         self.in_progress = True
 
-    def reset_state(self: Self) -> None:
+    def reset_state(self) -> None:
         self.team_1 = {}
         self.team_2 = {}
         self.map = None
@@ -103,15 +113,15 @@ class CurrentGame:
         self.in_progress = False
 
 
-def find_valid_games() -> List[Dict[str, List[Player]]]:
+def find_valid_games() -> list[dict[str, list[Player]]]:
     """
     Finds all valid games of 10 players from the queue.
     A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
     """
-    players_in_queue: List[Member] = QUEUE.copy()
+    players_in_queue: list[Member] = QUEUE.copy()
     PlayerData().instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)
-    combinations_of_players: List[List[Member]] = [
+    combinations_of_players: list[list[Member]] = [
         list(comb) for comb in itertools.combinations(player_set, 10)
     ]
     valid_games = []
@@ -165,7 +175,7 @@ def find_valid_games() -> List[Dict[str, List[Player]]]:
     return valid_games
 
 
-def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Player]]]:
+def get_team_combinations(players: dict[str, list[Player]]) -> list[list[list[Player]]]:
     """
     Finds every combination of players by role and returns a list of unique two team combinations.
     """
@@ -191,8 +201,8 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
 
 
 def find_best_game(
-    valid_games: List[Dict[str, List[Player]]]
-) -> Dict[str, Dict[str, Player] | str]:
+    valid_games: list[dict[str, list[Player]]]
+) -> dict[str, dict[str, Player] | str]:
     """
     Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation.
     """
@@ -200,7 +210,7 @@ def find_best_game(
     best_quality = 10000
     for game in valid_games:
         # Find every permutation of team comp, in which a valid team has 5 players: One tank, One Support, Two Assassins, and One Offlane.
-        team_combos: List[List[List[Player]]] = get_team_combinations(game)
+        team_combos: list[list[list[Player]]] = get_team_combinations(game)
         print(f"Found {len(team_combos)} configurations of players for this game group")
         # TODO: Should we instead compare match quality within team_combos and then take a random game?
         for combo in team_combos:
@@ -240,7 +250,7 @@ async def start_game(ctx: ApplicationContext) -> bool:
     """
     Takes the players from the queue and creates a game.
     """
-    assert type(ctx.user) is Member
+    assert isinstance(ctx.user, Member)
     if (
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
@@ -279,14 +289,12 @@ async def move_player_from_lobby_to_team_voice(
         team_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
         channel_id = TEAM_2_CHANNEL_ID
     else:
-        raise Exception("Invalid team number")
+        raise ValueError("Invalid team_number. Must be either 1 or 2.")
     if team_voice_channel is None:
-        raise CouldNotFindChannelException(
-            f"Team {team_number} Voice Channel", channel_id
-        )
+        raise ChannelNotFoundException(f"Team {team_number} Voice Channel", channel_id)
     try:
         await disc_user.move_to(team_voice_channel)
-    except Exception:
+    except (Forbidden, HTTPException):
         pass
 
 
@@ -300,11 +308,11 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext):
     team_1_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
     team_2_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
     if lobby_voice_channel is None:
-        raise CouldNotFindChannelException("Lobby Voice Channel", LOBBY_CHANNEL_ID)
+        raise ChannelNotFoundException("Lobby Voice Channel", LOBBY_CHANNEL_ID)
     if team_1_voice_channel is None:
-        raise CouldNotFindChannelException("Team 1 Voice Channel", TEAM_1_CHANNEL_ID)
+        raise ChannelNotFoundException("Team 1 Voice Channel", TEAM_1_CHANNEL_ID)
     if team_2_voice_channel is None:
-        raise CouldNotFindChannelException("Team 2 Voice Channel", TEAM_2_CHANNEL_ID)
+        raise ChannelNotFoundException("Team 2 Voice Channel", TEAM_2_CHANNEL_ID)
     for member in team_1_voice_channel.members:
         await member.move_to(lobby_voice_channel)
     for member in team_2_voice_channel.members:
@@ -318,7 +326,7 @@ def end_game(ctx: ApplicationContext, winner: str):
     """
     if ctx.guild is None:
         raise NoGuildException()
-    assert type(ctx.user) is Member
+    assert isinstance(ctx.user, Member)
     if (
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
@@ -332,7 +340,7 @@ def end_game(ctx: ApplicationContext, winner: str):
             winning_team = CurrentGame().team_2
             losing_team = CurrentGame().team_1
         else:
-            raise Exception("Invalid winner")
+            raise ValueError("Invalid winner. Must be either `team 1` or `team 2`.")
 
         print(f"\nI think the winning team is {winning_team}\n")
         print(f"\nI think the losing team is {losing_team}\n")
@@ -373,7 +381,7 @@ def cancel_game(ctx: ApplicationContext):
     """
     if ctx.guild is None:
         raise NoGuildException()
-    assert type(ctx.user) is Member
+    assert isinstance(ctx.user, Member)
     if (
         ADMIN_ID in [role.id for role in ctx.user.roles]
         or ctx.user.guild_permissions.administrator
