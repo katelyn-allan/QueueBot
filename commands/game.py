@@ -3,7 +3,7 @@ import random
 
 import numpy as np
 import trueskill
-from discord import ApplicationContext, Forbidden, HTTPException, Member
+from discord import ApplicationContext, Forbidden, HTTPException, Member, VoiceChannel
 from scipy.optimize import linear_sum_assignment
 
 from commands.player_stats import PlayerData, RoleStat
@@ -20,9 +20,7 @@ from exceptions import (
 
 
 def convert_int_to_role(role_int: int) -> str:
-    """
-    Helper function which turns a cost matrix indicy into a role string
-    """
+    """Helper function which turns a cost matrix indicy into a role string"""
     if role_int == 0 or role_int == 1:
         return "tank"
     elif role_int == 2 or role_int == 3:
@@ -36,9 +34,7 @@ def convert_int_to_role(role_int: int) -> str:
 
 
 class Player:
-    """
-    Class to store a player's role and rating for use in the game
-    """
+    """Class to store a player's role and rating for use in the game"""
 
     def __init__(self, user: Member, role: str):
         self.user = user
@@ -60,6 +56,8 @@ class Player:
 
 
 class CurrentGame:
+    """Singleton representing the currently running game."""
+
     # TODO: Make this configurable?
     valid_maps = [
         "Alterac Pass",
@@ -83,11 +81,11 @@ class CurrentGame:
         return cls.instance
 
     def __init__(self):
-        self.team_1: dict[str, Player]
-        self.team_2: dict[str, Player]
-        self.map: str
-        self.first_pick: int
-        self.in_progress: bool
+        self.team_1: dict[str, Player] = {}
+        self.team_2: dict[str, Player] = {}
+        self.map: str = ""
+        self.first_pick: int = 0
+        self.in_progress: bool = False
         if hasattr(self, "initialized") and self.initialized:
             return
         else:
@@ -99,6 +97,7 @@ class CurrentGame:
         team_1: dict[str, Player],
         team_2: dict[str, Player],
     ) -> None:
+        """Sets team, map, first_pick and in_progress attributes to start the game."""
         self.team_1 = team_1
         self.team_2 = team_2
         self.map = random.choice(self.valid_maps)
@@ -106,17 +105,19 @@ class CurrentGame:
         self.in_progress = True
 
     def reset_state(self) -> None:
+        """Resets team, map, first_pick and in_progress attributes to end game."""
         self.team_1 = {}
         self.team_2 = {}
-        self.map = None
-        self.first_pick = None
+        self.map = ""
+        self.first_pick = 0
         self.in_progress = False
 
 
 def find_valid_games() -> list[dict[str, list[Player]]]:
     """
     Finds all valid games of 10 players from the queue.
-    A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
+    A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes.
+    Players are priotized onto their primary role.
     """
     players_in_queue: list[Member] = QUEUE.copy()
     PlayerData().instantiate_new_players(players_in_queue)
@@ -126,8 +127,10 @@ def find_valid_games() -> list[dict[str, list[Player]]]:
     ]
     valid_games = []
 
-    # For each player in the queue, create a numpy matrix, where the rows are the players, and the columns are the roles (Tank, Healer, Assassin, Offlane).
-    # The cost of each player to be assigned to a role is 0 if they have the role, 1 if they are a fill, and 2 if they do not have any roles.
+    # For each player in the queue, create a numpy matrix, where the rows are the players,
+    # and the columns are the roles (Tank, Healer, Assassin, Offlane).
+    # The cost of each player to be assigned to a role is 0 if they have the role,
+    # 1 if they are a fill, and 2 if they do not have any roles.
     for perm in combinations_of_players:
         matrix = np.full((len(perm), 10), 2)
         for i, player in enumerate(perm):
@@ -177,7 +180,8 @@ def find_valid_games() -> list[dict[str, list[Player]]]:
 
 def get_team_combinations(players: dict[str, list[Player]]) -> list[list[list[Player]]]:
     """
-    Finds every combination of players by role and returns a list of unique two team combinations.
+    Finds every combination of players by role.
+    Returns a list of unique two team combinations.
     """
     combinations = []
     for tank in players["tank"]:
@@ -202,17 +206,21 @@ def get_team_combinations(players: dict[str, list[Player]]) -> list[list[list[Pl
 
 def find_best_game(
     valid_games: list[dict[str, list[Player]]]
-) -> dict[str, dict[str, Player] | str]:
+) -> dict[str, dict[str, Player]]:
     """
-    Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation.
+    Takes in a set of valid games, broken down by role.
+    Returns the best game by trueskill rating calculation.
+    A game has the structure {team: {role:Player}}.
     """
     best_game = None
     best_quality = 10000
     for game in valid_games:
-        # Find every permutation of team comp, in which a valid team has 5 players: One tank, One Support, Two Assassins, and One Offlane.
+        # Find every permutation of team comp, in which a valid team has 5 players:
+        # One tank, one support, two assassins, and one offlane.
         team_combos: list[list[list[Player]]] = get_team_combinations(game)
         print(f"Found {len(team_combos)} configurations of players for this game group")
-        # TODO: Should we instead compare match quality within team_combos and then take a random game?
+        # TODO: Should we instead compare match quality within team_combos
+        # and then take a random game?
         for combo in team_combos:
             team1 = combo[0]
             team2 = combo[1]
@@ -247,9 +255,7 @@ def find_best_game(
 
 
 async def start_game(ctx: ApplicationContext) -> bool:
-    """
-    Takes the players from the queue and creates a game.
-    """
+    """Takes the players from the queue and creates a game."""
     assert isinstance(ctx.user, Member)
     if (
         ADMIN_ID in [role.id for role in ctx.user.roles]
@@ -276,7 +282,7 @@ async def start_game(ctx: ApplicationContext) -> bool:
 
 async def move_player_from_lobby_to_team_voice(
     disc_user: Member, team_number: int, ctx: ApplicationContext
-):
+) -> None:
     """
     Moves a player from the lobby voice channel to the Team 1 voice channel.
     """
@@ -292,16 +298,16 @@ async def move_player_from_lobby_to_team_voice(
         raise ValueError("Invalid team_number. Must be either 1 or 2.")
     if team_voice_channel is None:
         raise ChannelNotFoundException(f"Team {team_number} Voice Channel", channel_id)
+
+    assert isinstance(team_voice_channel, VoiceChannel)
     try:
         await disc_user.move_to(team_voice_channel)
     except (Forbidden, HTTPException):
         pass
 
 
-async def move_all_team_players_to_lobby(ctx: ApplicationContext):
-    """
-    For the end of a game, moves all players that are in team_1 or team_2 back to the lobby.
-    """
+async def move_all_team_players_to_lobby(ctx: ApplicationContext) -> None:
+    """For the end of a game, moves all players that are in team_1 or team_2 back to the lobby."""
     if ctx.guild is None:
         raise NoGuildException()
     lobby_voice_channel = ctx.guild.get_channel(LOBBY_CHANNEL_ID)
@@ -313,6 +319,11 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext):
         raise ChannelNotFoundException("Team 1 Voice Channel", TEAM_1_CHANNEL_ID)
     if team_2_voice_channel is None:
         raise ChannelNotFoundException("Team 2 Voice Channel", TEAM_2_CHANNEL_ID)
+
+    assert isinstance(lobby_voice_channel, VoiceChannel)
+    assert isinstance(team_1_voice_channel, VoiceChannel)
+    assert isinstance(team_2_voice_channel, VoiceChannel)
+
     for member in team_1_voice_channel.members:
         await member.move_to(lobby_voice_channel)
     for member in team_2_voice_channel.members:
@@ -377,7 +388,8 @@ def end_game(ctx: ApplicationContext, winner: str):
 
 def cancel_game(ctx: ApplicationContext):
     """
-    If a game is currently running, ends the game and moves all players back to the lobby without reporting winners.
+    If a game is currently running, ends the game.
+    Moves all players back to the lobby without reporting winners.
     """
     if ctx.guild is None:
         raise NoGuildException()

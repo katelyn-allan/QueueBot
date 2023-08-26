@@ -27,7 +27,7 @@ QUEUE: list[Member] = []
 
 
 def populate_queue(ctx: ApplicationContext) -> int:
-    """Populates the queue with all players who have the Queued Role"""
+    """Populates the queue with all players who have the `Queued` Role."""
     if ctx.guild is None:
         raise NoGuildException()
     queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -39,7 +39,7 @@ def populate_queue(ctx: ApplicationContext) -> int:
 
 
 async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> None:
-    """Updates the queue channel with the current queue"""
+    """Updates the queue channel with the current queue."""
     if ctx.guild is None:
         raise NoGuildException()
 
@@ -54,7 +54,7 @@ async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> No
 
 
 def join_queue(ctx: ApplicationContext) -> tuple[int, int]:
-    """Facilitates joining the queue, returns the user's id and the number of people in the queue"""
+    """Adds user to queue. Returns the user's id and the number of people in the queue."""
     assert isinstance(ctx.user, Member)
     if ctx.user in QUEUE:
         raise AlreadyInQueueException(ctx.user)
@@ -74,7 +74,7 @@ def join_queue(ctx: ApplicationContext) -> tuple[int, int]:
 
 
 def get_queue_data(queue: list[Member] = QUEUE) -> dict[str, list[str]]:
-    """Lists the players in the queue and their roles"""
+    """Lists the players in the queue and their roles."""
     # For each User in the queue list their roles in the current guild
     queue_data = {
         "Tanks": [],
@@ -111,7 +111,7 @@ def get_queue_data(queue: list[Member] = QUEUE) -> dict[str, list[str]]:
 
 
 def leave_queue(ctx: ApplicationContext) -> tuple[int, int]:
-    """Facilitates leaving the queue, returns the user's id and the number of people in the queue"""
+    """Removes player from queue. Returns the user's id and the number of people in the queue."""
     if ctx.user not in QUEUE:
         raise PlayerNotFoundException(ctx.user)
     QUEUE.remove(ctx.user)
@@ -120,12 +120,12 @@ def leave_queue(ctx: ApplicationContext) -> tuple[int, int]:
 
 
 def clear_queue() -> None:
-    """Clears the queue"""
+    """Clears the queue."""
     QUEUE.clear()
 
 
 def remove_from_queue(user: Member) -> tuple[int, int]:
-    """Removes a player from the queue"""
+    """Removes a player from the queue."""
     if user not in QUEUE:
         raise PlayerNotFoundException(user)
     QUEUE.remove(user)
