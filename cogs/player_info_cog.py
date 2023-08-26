@@ -1,18 +1,19 @@
-import time
 import discord
-from discord import ApplicationContext
-import commands.player_stats as player_stats
-from exceptions import *
-from typing import List, Dict, Any
+from discord import (  # pylint: disable = no-name-in-module
+    ApplicationContext,
+    slash_command,
+)
 from discord.ext import commands
-from env_load import *
+
+import commands.player_stats as player_stats
+from env_load import ASSASSIN_EMOJI, OFFLANE_EMOJI, SUPPORT_EMOJI, TANK_EMOJI
 
 
 class PlayerInfoCog(commands.Cog):
     def __init__(self, bot):
         self.bot: discord.Bot = bot
 
-    def convert_stat_dict_to_str_output(self, stats: Dict[str, float]) -> str:
+    def convert_stat_dict_to_str_output(self, stats: dict[str, float]) -> str:
         """
         Converts a player stats dict into a string output for reporting
         """
@@ -21,9 +22,9 @@ class PlayerInfoCog(commands.Cog):
             output += f"**{key.replace('_', ' ').capitalize()}:** {value}\n"
         return output
 
-    @discord.slash_command(name="stats", description="Get your stats")
+    @slash_command(name="stats", description="Get your stats")
     async def slash_get_stats(self, ctx: ApplicationContext):
-        stats: Dict[str, Dict[str, float]] = player_stats.get_player_stats(ctx)
+        stats: dict[str, dict[str, float]] = player_stats.get_player_stats(ctx)
         embed = discord.Embed(
             title="Player Stats",
             color=discord.Colour.blurple(),
@@ -52,7 +53,7 @@ class PlayerInfoCog(commands.Cog):
         embed.set_thumbnail(url=ctx.author.display_avatar.url)
         await ctx.respond(embed=embed, ephemeral=True)
 
-    @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
+    @slash_command(name="setup", description="Get set up with the Queue Bot!")
     async def slash_setup(self, ctx: ApplicationContext):
         main_role_view = MainRoleSelectView()
         await ctx.respond(
@@ -182,11 +183,11 @@ class SecondaryRoleSelectView(discord.ui.View):
                 await interaction.user.remove_roles(other_role)
 
         # Add the roles the user selected.
-        role_strings: List[str] = select.values
+        role_strings: list[str] = select.values
         main_role_fill = f"{self.main_role} (Fill)"
         if main_role_fill in role_strings:
             role_strings.remove(main_role_fill)
-        roles: List[discord.Role] = [
+        roles: list[discord.Role] = [
             discord.utils.get(interaction.guild.roles, name=role_string)
             for role_string in role_strings
         ]
