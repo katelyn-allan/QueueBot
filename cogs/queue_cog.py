@@ -59,7 +59,7 @@ class QueueCog(commands.Cog):
 
     @slash_command(name="list", description="List the players in the queue")
     async def slash_list_queue(self, ctx: ApplicationContext):
-        queue_info = queue.get_queue_data(ctx)
+        queue_info = queue.get_queue_data()
         thumbnail = discord.File("images/hotslogo.png", filename="hotslogo.png")
         embed = discord.Embed(
             title="Queue",
