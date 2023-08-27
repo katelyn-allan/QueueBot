@@ -11,24 +11,35 @@ from util.exceptions import (
     NotEnoughPlayersException,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class GameCog(commands.Cog):
-    def __init__(self: Self, bot) -> None:
+    """Cog to track commands related to running games."""
+
+    def __init__(self: Self, bot: discord.Bot) -> None:
+        """Initialize this cog with the bot."""
         self.bot: discord.Bot = bot
 
     def convert_team_to_string(self: Self, team: Dict[str, game.Player]) -> str:
+        """Helper function to convert a provided team dictionary to a string representation.
+
+        TODO: Convert team to a class structure and add a __str__ method for this.
+        """
         return_str = ""
         for role in ["tank", "support", "assassin", "assassin2", "offlane"]:
             return_str += f"<@{team[role].user.id}>\n\n"
         return return_str
 
     @discord.slash_command(name="start", description="Start a game")
-    async def slash_start_game(self: Self, ctx: ApplicationContext):
+    async def slash_start_game(self: Self, ctx: ApplicationContext) -> None:
+        """Starts a game."""
         try:
             current_game = await game.start_game(ctx)
             if current_game:
                 current_game = game.CurrentGame()
-                print(current_game)
                 map: str = current_game.map
                 team1: Dict[str, game.Player] = current_game.team_1
                 team2: Dict[str, game.Player] = current_game.team_2
@@ -89,14 +100,15 @@ class GameCog(commands.Cog):
         description="The team that won the game",
         choices=["team 1", "team 2"],
     )
-    async def slash_end_game(self: Self, ctx: ApplicationContext, winner: str):
+    async def slash_end_game(self: Self, ctx: ApplicationContext, winner: str) -> None:
+        """Ends a game, reporting a winner."""
         try:
             game.end_game(ctx, winner)
 
             # Move everyone back to the lobby.
             try:
                 await game.move_all_team_players_to_lobby(ctx)
-            except:
+            except Exception:  # TODO: Make non-generic
                 pass
             embed = discord.Embed(
                 title="Game Ended",
@@ -120,12 +132,14 @@ class GameCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="cancel", description="Cancel a currently running game")
-    async def slash_cancel_game(self: Self, ctx: ApplicationContext):
+    async def slash_cancel_game(self: Self, ctx: ApplicationContext) -> None:
+        """Cancels a started game with no winner reported."""
         try:
             game.cancel_game(ctx)
             try:
                 await game.move_all_team_players_to_lobby(ctx)
-            except:
+            except Exception as e:  # TODO: Make non-generic
+                logger.error(e)
                 pass
             embed = discord.Embed(
                 title="Game Cancelled",
@@ -149,5 +163,6 @@ class GameCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: discord.Bot) -> None:
+    """Adds this cog to the bot."""
     bot.add_cog(GameCog(bot))

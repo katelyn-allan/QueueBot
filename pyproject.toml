@@ -4,6 +4,7 @@ line-length = 120
 include = '\.pyi?$'
 
 [tool.ruff]
+# List of all rules: https://beta.ruff.rs/docs/rules/
 select = [
     # Grab-bag rules
     "D", # Docstrings
