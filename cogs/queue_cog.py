@@ -53,7 +53,7 @@ class QueueCog(commands.Cog):
             description=f"<@{user_id}> has joined the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
-        await queue.update_queue_channel(ctx, queue_length)
+        await queue.update_queue_channel(ctx.guild)
 
     @discord.slash_command(name="list", description="List the players in the queue")
     async def slash_list_queue(self: Self, ctx: ApplicationContext) -> None:
