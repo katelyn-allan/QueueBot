@@ -1,6 +1,6 @@
 [tool.black]
 skip-string-normalization = false
-line-length = 150
+line-length = 120
 include = '\.pyi?$'
 
 [tool.ruff]
@@ -47,7 +47,7 @@ exclude = [
 ]
 per-file-ignores = {}
 
-line-length = 150 # Set to the same as Black for consistency
+line-length = 120 # Set to the same as Black for consistency
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
