@@ -53,7 +53,6 @@ class QueueCog(commands.Cog):
             description=f"<@{user_id}> has joined the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
-        await queue.update_queue_channel(ctx.guild)
 
     @discord.slash_command(name="list", description="List the players in the queue")
     async def slash_list_queue(self: Self, ctx: ApplicationContext) -> None:
@@ -135,7 +134,6 @@ class QueueCog(commands.Cog):
             description=f"<@{user_id}> has left the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
-        await queue.update_queue_channel(ctx.guild)
 
     @discord.slash_command(name="clear", description="Clear the queue")
     async def slash_clear_queue(self: Self, ctx: ApplicationContext) -> None:
@@ -152,7 +150,6 @@ class QueueCog(commands.Cog):
                 description="Queue cleared!",
             )
             await ctx.respond(embed=embed)
-            await queue.update_queue_channel(ctx.guild)
         else:
             embed = discord.Embed(
                 title="Error",
@@ -186,7 +183,6 @@ class QueueCog(commands.Cog):
                 description=f"<@{user_id}> has been removed from the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
             )
             await ctx.respond(embed=embed)
-            await queue.update_queue_channel(ctx.guild)
         else:
             embed = discord.Embed(
                 title="Error",

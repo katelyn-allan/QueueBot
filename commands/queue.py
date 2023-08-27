@@ -44,22 +44,6 @@ def populate_queue(guild: Guild) -> int:
     return len(QUEUE)
 
 
-async def update_queue_channel(guild: Guild) -> None:
-    """Updates the queue channel with the current queue."""
-    if guild is None:
-        raise NoGuildException
-
-    queue_channel = guild.get_channel(QUEUE_INFO_CHANNEL_ID)
-    queue_length = len(QUEUE)
-    plural = "s" if queue_length != 1 else ""
-
-    # Rename the queue channel to display the queue
-    if queue_channel is None:
-        raise CouldNotFindChannelException("Queue Info Channel", QUEUE_INFO_CHANNEL_ID)
-    await queue_channel.edit(name=f"QUEUE | {queue_length} player{plural}")
-    logger.info("Successfully updated the queue channel")
-
-
 def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
     """Facilitates joining the queue, returns the user's id and the number of people in the queue."""
     assert type(ctx.user) is Member
