@@ -8,4 +8,4 @@ repos:
     rev: 23.7.0
     hooks:
       - id: black
-        args: [--line-length=150]
+        args: [--line-length=120]

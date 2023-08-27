@@ -44,7 +44,12 @@ def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
         raise AlreadyInQueueException(ctx.user)
     # Raise an error if the user does not have a main role set
     user_roles = [role.id for role in ctx.user.roles]
-    if TANK_ID not in user_roles and SUPPORT_ID not in user_roles and ASSASSIN_ID not in user_roles and OFFLANE_ID not in user_roles:
+    if (
+        TANK_ID not in user_roles
+        and SUPPORT_ID not in user_roles
+        and ASSASSIN_ID not in user_roles
+        and OFFLANE_ID not in user_roles
+    ):
         raise NoMainRoleException(ctx.user)
     QUEUE.append(ctx.user)
     # Assign the user the queued role

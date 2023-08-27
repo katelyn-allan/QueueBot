@@ -305,7 +305,9 @@ def end_game(ctx: ApplicationContext, winner: str):
         print(f"\nWinning team ratings: {winning_team_ratings}")
         losing_team_ratings = [player.rating for player in losing_team.values()]
         print(f"\nLosing team ratings: {losing_team_ratings}")
-        winning_team_ratings, losing_team_ratings = trueskill.rate([winning_team_ratings, losing_team_ratings], ranks=[0, 1])
+        winning_team_ratings, losing_team_ratings = trueskill.rate(
+            [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
+        )
         print(f"\nUpdated Winning team ratings: {winning_team_ratings}")
         print(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 

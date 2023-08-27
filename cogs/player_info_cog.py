@@ -179,7 +179,9 @@ class SecondaryRoleSelectView(discord.ui.View):
         main_role_fill = f"{self.main_role} (Fill)"
         if main_role_fill in role_strings:
             role_strings.remove(main_role_fill)
-        roles: List[discord.Role] = [discord.utils.get(interaction.guild.roles, name=role_string) for role_string in role_strings]
+        roles: List[discord.Role] = [
+            discord.utils.get(interaction.guild.roles, name=role_string) for role_string in role_strings
+        ]
         for role in roles:
             await interaction.user.add_roles(role)
 
