@@ -1,3 +1,5 @@
+from typing import Self
+
 import discord
 from discord import ApplicationContext
 from discord.ext import commands
@@ -19,11 +21,11 @@ from exceptions import (
 
 
 class QueueCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self: Self, bot):
         self.bot: discord.Bot = bot
 
     @discord.slash_command(name="join", description="Join the queue for a game")
-    async def slash_join_queue(self, ctx: ApplicationContext):
+    async def slash_join_queue(self: Self, ctx: ApplicationContext):
         try:
             user_id, queue_length = queue.join_queue(ctx)
             queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -61,7 +63,7 @@ class QueueCog(commands.Cog):
         await queue.update_queue_channel(ctx, queue_length)
 
     @discord.slash_command(name="list", description="List the players in the queue")
-    async def slash_list_queue(self, ctx: ApplicationContext):
+    async def slash_list_queue(self: Self, ctx: ApplicationContext):
         queue_info = queue.get_queue_data()
         thumbnail = discord.File("images/hotslogo.png", filename="hotslogo.png")
         embed = discord.Embed(
@@ -117,7 +119,7 @@ class QueueCog(commands.Cog):
         await ctx.respond(file=thumbnail, embed=embed)
 
     @discord.slash_command(name="leave", description="Leave the queue for a game")
-    async def slash_leave_queue(self, ctx: ApplicationContext):
+    async def slash_leave_queue(self: Self, ctx: ApplicationContext):
         try:
             user_id, queue_length = queue.leave_queue(ctx)
             queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -170,7 +172,9 @@ class QueueCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="remove", description="Remove a player from the queue")
-    async def slash_remove_player(self, ctx: ApplicationContext, user: discord.Member):
+    async def slash_remove_player(
+        self: Self, ctx: ApplicationContext, user: discord.Member
+    ):
         if (
             ADMIN_ID in [role.id for role in ctx.user.roles]
             or ctx.user.guild_permissions.administrator
@@ -212,7 +216,7 @@ class QueueCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="initialize", description="Initialize the bot")
-    async def slash_initialize(self, ctx: ApplicationContext):
+    async def slash_initialize(self: Self, ctx: ApplicationContext):
         if (
             ADMIN_ID in [role.id for role in ctx.user.roles]
             or ctx.user.guild_permissions.administrator

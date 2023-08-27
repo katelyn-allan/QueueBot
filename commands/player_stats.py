@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Self
 
 import trueskill
 from discord import ApplicationContext, Member
@@ -10,7 +10,7 @@ class RoleStat:
     Tracks a player's stats across a specific role
     """
 
-    def __init__(self, init_dict: dict[str, Any] | None = None):
+    def __init__(self: Self, init_dict: dict[str, Any] | None = None):
         if init_dict:
             self.games_played: int = init_dict["games_played"]
             self.games_won: int = init_dict["games_won"]
@@ -22,7 +22,7 @@ class RoleStat:
             self.games_won: int = 0
             self.rating = trueskill.Rating()
 
-    def convert_to_dict(self) -> dict[str, float | str]:
+    def convert_to_dict(self: Self) -> dict[str, float | str]:
         """Converts all fields to dictionaries to allow dumping to json"""
         outp = {}
         outp["games_played"] = self.games_played
@@ -33,7 +33,7 @@ class RoleStat:
         }
         return outp
 
-    def get_stats(self) -> dict[str, float | str]:
+    def get_stats(self: Self) -> dict[str, float | str]:
         """Returns a dictionary of the player's stats"""
         if self.games_played != 0:
             return {
@@ -54,7 +54,7 @@ class PlayerStats:
     Container class for player stats across multiple roles
     """
 
-    def __init__(self, init_dict: dict[str, Any] | None = None):
+    def __init__(self: Self, init_dict: dict[str, Any] | None = None):
         if init_dict:
             self.tank = RoleStat(init_dict["tank"])
             self.support = RoleStat(init_dict["support"])
@@ -66,7 +66,7 @@ class PlayerStats:
             self.assassin = RoleStat()
             self.offlane = RoleStat()
 
-    def convert_to_dict(self) -> dict[str, float | str]:
+    def convert_to_dict(self: Self) -> dict[str, float | str]:
         """Converts all fields to dictionaries to allow dumping to json"""
         outp = {}
         outp["tank"] = self.tank.convert_to_dict()
@@ -86,11 +86,11 @@ class PlayerData:
             cls.instance = super(PlayerData, cls).__new__(cls)
         return cls.instance
 
-    def __init__(self):
+    def __init__(self: Self):
         if not hasattr(self, "player_data"):
             self.player_data: dict[str, PlayerStats] = self.load_player_data()
 
-    def load_player_data(self) -> dict[str, PlayerStats]:
+    def load_player_data(self: Self) -> dict[str, PlayerStats]:
         """Loads player_data.json into memory for manipulation"""
         with open("player_data.json", "r", encoding="utf-8") as file:
             dict_load = json.load(file)
@@ -98,11 +98,11 @@ class PlayerData:
                 dict_load[key] = PlayerStats(value)
             return dict_load
 
-    def reload_palyer_data(self):
+    def reload_palyer_data(self: Self):
         """Reloads player data"""
         self.player_data: dict[str, PlayerStats] = self.load_player_data()
 
-    def update_player_data(self) -> None:
+    def update_player_data(self: Self) -> None:
         """Updates player_data.json with the current data in memory"""
         data_copy = self.player_data.copy()
         for key, value in data_copy.items():
@@ -111,7 +111,7 @@ class PlayerData:
             json.dump(data_copy, file)
         self.reload_palyer_data()
 
-    def instantiate_new_players(self, users: list[Member]) -> None:
+    def instantiate_new_players(self: Self, users: list[Member]) -> None:
         for user in users:
             if user.id not in self.player_data:
                 self.player_data[str(user.id)] = PlayerStats()

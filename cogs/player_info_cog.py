@@ -1,3 +1,5 @@
+from typing import Self
+
 import discord
 from discord import ApplicationContext
 from discord.ext import commands
@@ -7,10 +9,10 @@ from env_load import ASSASSIN_EMOJI, OFFLANE_EMOJI, SUPPORT_EMOJI, TANK_EMOJI
 
 
 class PlayerInfoCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self: Self, bot):
         self.bot: discord.Bot = bot
 
-    def convert_stat_dict_to_str_output(self, stats: dict[str, float]) -> str:
+    def convert_stat_dict_to_str_output(self: Self, stats: dict[str, float]) -> str:
         """
         Converts a player stats dict into a string output for reporting
         """
@@ -20,7 +22,7 @@ class PlayerInfoCog(commands.Cog):
         return output
 
     @discord.slash_command(name="stats", description="Get your stats")
-    async def slash_get_stats(self, ctx: ApplicationContext):
+    async def slash_get_stats(self: Self, ctx: ApplicationContext):
         stats: dict[str, dict[str, float]] = player_stats.get_player_stats(ctx)
         embed = discord.Embed(
             title="Player Stats",
@@ -51,7 +53,7 @@ class PlayerInfoCog(commands.Cog):
         await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
-    async def slash_setup(self, ctx: ApplicationContext):
+    async def slash_setup(self: Self, ctx: ApplicationContext):
         main_role_view = MainRoleSelectView()
         await ctx.respond(
             (
@@ -134,7 +136,7 @@ class MainRoleSelectView(discord.ui.View):
 
 
 class SecondaryRoleSelectView(discord.ui.View):
-    def __init__(self, main_role: str):
+    def __init__(self: Self, main_role: str):
         super().__init__()
         self.main_role = main_role
 

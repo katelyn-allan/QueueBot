@@ -1,5 +1,6 @@
 import itertools
 import random
+from typing import Self
 
 import numpy as np
 import trueskill
@@ -36,12 +37,12 @@ def convert_int_to_role(role_int: int) -> str:
 class Player:
     """Class to store a player's role and rating for use in the game"""
 
-    def __init__(self, user: Member, role: str):
+    def __init__(self: Self, user: Member, role: str):
         self.user = user
         self.role = role
         self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
 
-    def report_player_data(self, win: bool):
+    def report_player_data(self: Self, win: bool):
         """Updates the player's rating in the PLAYER_DATA dictionary"""
         player_data_obj: RoleStat = getattr(
             PlayerData().player_data[str(self.user.id)], self.role
@@ -80,7 +81,7 @@ class CurrentGame:
             cls.instance.initialized = False
         return cls.instance
 
-    def __init__(self):
+    def __init__(self: Self):
         self.team_1: dict[str, Player] = {}
         self.team_2: dict[str, Player] = {}
         self.map: str = ""
@@ -104,7 +105,7 @@ class CurrentGame:
         self.first_pick = random.choice([1, 2])
         self.in_progress = True
 
-    def reset_state(self) -> None:
+    def reset_state(self: Self) -> None:
         """Resets team, map, first_pick and in_progress attributes to end game."""
         self.team_1 = {}
         self.team_2 = {}
