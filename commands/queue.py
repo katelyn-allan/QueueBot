@@ -16,7 +16,7 @@ from util.env_load import (
 
 from util.exceptions import (
     AlreadyInQueueException,
-    CouldNotFindChannelException,
+    ChannelNotFoundException,
     NoGuildException,
     NoMainRoleException,
     PlayerNotFoundException,
@@ -55,7 +55,7 @@ async def update_queue_channel(guild: Guild) -> None:
 
     # Rename the queue channel to display the queue
     if queue_channel is None:
-        raise CouldNotFindChannelException("Queue Info Channel", QUEUE_INFO_CHANNEL_ID)
+        raise ChannelNotFoundException("Queue Info Channel", QUEUE_INFO_CHANNEL_ID)
     await queue_channel.edit(name=f"QUEUE | {queue_length} player{plural}")
     logger.info("Successfully updated the queue channel")
 

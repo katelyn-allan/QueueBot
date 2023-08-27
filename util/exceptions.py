@@ -63,7 +63,7 @@ class NoGuildException(Exception):
     pass
 
 
-class CouldNotFindChannelException(Exception):
+class ChannelNotFoundException(Exception):
     """Exception that is called when a channel is not found by its ID."""
 
     def __init__(self: Self, name: str, channel_id: int) -> None:
