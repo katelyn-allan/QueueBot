@@ -1,9 +1,5 @@
 import discord
-from discord import (  # pylint: disable = no-name-in-module
-    ApplicationContext,
-    option,
-    slash_command,
-)
+from discord import ApplicationContext, option
 from discord.ext import commands
 
 import commands.game as game
@@ -27,7 +23,7 @@ class GameCog(commands.Cog):
             return_str += f"<@{team[role].user.id}>\n\n"
         return return_str
 
-    @slash_command(name="start", description="Start a game")
+    @discord.slash_command(name="start", description="Start a game")
     async def slash_start_game(self, ctx: ApplicationContext):
         try:
             current_game = await game.start_game(ctx)
@@ -87,7 +83,7 @@ class GameCog(commands.Cog):
             )
             await ctx.respond(embed=embed, ephemeral=True)
 
-    @slash_command(name="end", description="End a currently running game")
+    @discord.slash_command(name="end", description="End a currently running game")
     @option(
         "winner",
         str,
@@ -124,7 +120,7 @@ class GameCog(commands.Cog):
             )
             await ctx.respond(embed=embed, ephemeral=True)
 
-    @slash_command(name="cancel", description="Cancel a currently running game")
+    @discord.slash_command(name="cancel", description="Cancel a currently running game")
     async def slash_cancel_game(self, ctx: ApplicationContext):
         try:
             game.cancel_game(ctx)

@@ -1,8 +1,5 @@
 import discord
-from discord import (  # pylint: disable = no-name-in-module
-    ApplicationContext,
-    slash_command,
-)
+from discord import ApplicationContext
 from discord.ext import commands
 
 import commands.queue as queue
@@ -25,7 +22,7 @@ class QueueCog(commands.Cog):
     def __init__(self, bot):
         self.bot: discord.Bot = bot
 
-    @slash_command(name="join", description="Join the queue for a game")
+    @discord.slash_command(name="join", description="Join the queue for a game")
     async def slash_join_queue(self, ctx: ApplicationContext):
         try:
             user_id, queue_length = queue.join_queue(ctx)
@@ -57,7 +54,7 @@ class QueueCog(commands.Cog):
         await ctx.respond(embed=embed)
         await queue.update_queue_channel(ctx, queue_length)
 
-    @slash_command(name="list", description="List the players in the queue")
+    @discord.slash_command(name="list", description="List the players in the queue")
     async def slash_list_queue(self, ctx: ApplicationContext):
         queue_info = queue.get_queue_data()
         thumbnail = discord.File("images/hotslogo.png", filename="hotslogo.png")
@@ -113,7 +110,7 @@ class QueueCog(commands.Cog):
         embed.set_thumbnail(url="attachment://hotslogo.png")
         await ctx.respond(file=thumbnail, embed=embed)
 
-    @slash_command(name="leave", description="Leave the queue for a game")
+    @discord.slash_command(name="leave", description="Leave the queue for a game")
     async def slash_leave_queue(self, ctx: ApplicationContext):
         try:
             user_id, queue_length = queue.leave_queue(ctx)
@@ -137,7 +134,7 @@ class QueueCog(commands.Cog):
         await ctx.respond(embed=embed)
         await queue.update_queue_channel(ctx, queue_length)
 
-    @slash_command(name="clear", description="Clear the queue")
+    @discord.slash_command(name="clear", description="Clear the queue")
     async def slash_clear_queue(self, ctx: ApplicationContext):
         if (
             ADMIN_ID in [role.id for role in ctx.user.roles]
@@ -163,7 +160,7 @@ class QueueCog(commands.Cog):
             )
             await ctx.respond(embed=embed, ephemeral=True)
 
-    @slash_command(name="remove", description="Remove a player from the queue")
+    @discord.slash_command(name="remove", description="Remove a player from the queue")
     async def slash_remove_player(self, ctx: ApplicationContext, user: discord.Member):
         if (
             ADMIN_ID in [role.id for role in ctx.user.roles]
@@ -199,7 +196,7 @@ class QueueCog(commands.Cog):
             )
             await ctx.respond(embed=embed, ephemeral=True)
 
-    @slash_command(name="initialize", description="Initialize the bot")
+    @discord.slash_command(name="initialize", description="Initialize the bot")
     async def slash_initialize(self, ctx: ApplicationContext):
         if (
             ADMIN_ID in [role.id for role in ctx.user.roles]

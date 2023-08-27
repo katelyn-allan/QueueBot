@@ -1,8 +1,5 @@
 import discord
-from discord import (  # pylint: disable = no-name-in-module
-    ApplicationContext,
-    slash_command,
-)
+from discord import ApplicationContext
 from discord.ext import commands
 
 import commands.player_stats as player_stats
@@ -22,7 +19,7 @@ class PlayerInfoCog(commands.Cog):
             output += f"**{key.replace('_', ' ').capitalize()}:** {value}\n"
         return output
 
-    @slash_command(name="stats", description="Get your stats")
+    @discord.slash_command(name="stats", description="Get your stats")
     async def slash_get_stats(self, ctx: ApplicationContext):
         stats: dict[str, dict[str, float]] = player_stats.get_player_stats(ctx)
         embed = discord.Embed(
@@ -53,7 +50,7 @@ class PlayerInfoCog(commands.Cog):
         embed.set_thumbnail(url=ctx.author.display_avatar.url)
         await ctx.respond(embed=embed, ephemeral=True)
 
-    @slash_command(name="setup", description="Get set up with the Queue Bot!")
+    @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
     async def slash_setup(self, ctx: ApplicationContext):
         main_role_view = MainRoleSelectView()
         await ctx.respond(
