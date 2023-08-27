@@ -1,24 +1,29 @@
 import discord
 from discord import ApplicationContext, option
 import commands.game as game
-from util.exceptions import *
-from typing import Dict
+from typing import Dict, Self
 from discord.ext import commands
-from util.env_load import *
+
+from util.exceptions import (
+    GameIsInProgressException,
+    NoGameInProgressException,
+    NotAdminException,
+    NotEnoughPlayersException,
+)
 
 
 class GameCog(commands.Cog):
-    def __init__(self, bot) -> None:
+    def __init__(self: Self, bot) -> None:
         self.bot: discord.Bot = bot
 
-    def convert_team_to_string(self, team: Dict[str, game.Player]) -> str:
+    def convert_team_to_string(self: Self, team: Dict[str, game.Player]) -> str:
         return_str = ""
         for role in ["tank", "support", "assassin", "assassin2", "offlane"]:
             return_str += f"<@{team[role].user.id}>\n\n"
         return return_str
 
     @discord.slash_command(name="start", description="Start a game")
-    async def slash_start_game(self, ctx: ApplicationContext):
+    async def slash_start_game(self: Self, ctx: ApplicationContext):
         try:
             current_game = await game.start_game(ctx)
             if current_game:
@@ -84,7 +89,7 @@ class GameCog(commands.Cog):
         description="The team that won the game",
         choices=["team 1", "team 2"],
     )
-    async def slash_end_game(self, ctx: ApplicationContext, winner: str):
+    async def slash_end_game(self: Self, ctx: ApplicationContext, winner: str):
         try:
             game.end_game(ctx, winner)
 
@@ -115,7 +120,7 @@ class GameCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="cancel", description="Cancel a currently running game")
-    async def slash_cancel_game(self, ctx: ApplicationContext):
+    async def slash_cancel_game(self: Self, ctx: ApplicationContext):
         try:
             game.cancel_game(ctx)
             try:

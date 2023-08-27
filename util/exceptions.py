@@ -1,3 +1,6 @@
+from typing import Self
+
+
 class NotEnoughPlayersException(Exception):
     pass
 
@@ -7,12 +10,12 @@ class GameIsInProgressException(Exception):
 
 
 class AlreadyInQueueException(Exception):
-    def __init__(self, user) -> None:
+    def __init__(self: Self, user) -> None:
         self.user = user
 
 
 class PlayerNotFoundException(Exception):
-    def __init__(self, user) -> None:
+    def __init__(self: Self, user) -> None:
         self.user = user
 
 
@@ -33,7 +36,7 @@ class NotAdminException(Exception):
 
 
 class NoMainRoleException(Exception):
-    def __init__(self, user) -> None:
+    def __init__(self: Self, user) -> None:
         self.user = user
 
 
@@ -42,6 +45,6 @@ class NoGuildException(Exception):
 
 
 class CouldNotFindChannelException(Exception):
-    def __init__(self, name: str, channel_id: int) -> None:
+    def __init__(self: Self, name: str, channel_id: int) -> None:
         self.name = name
         self.channel_id = channel_id

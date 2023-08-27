@@ -10,8 +10,16 @@ import numpy as np
 import itertools
 from scipy.optimize import linear_sum_assignment
 import random
-from util.exceptions import *
-from util.env_load import *
+from util.env_load import ADMIN_ID, LOBBY_CHANNEL_ID, TEAM_1_CHANNEL_ID, TEAM_2_CHANNEL_ID
+
+from util.exceptions import (
+    CouldNotFindChannelException,
+    GameInProgressException,
+    NoGameInProgressException,
+    NoGuildException,
+    NoValidGameException,
+    NotAdminException,
+)
 
 
 def convert_int_to_role(role_int: int) -> str:
@@ -31,12 +39,12 @@ def convert_int_to_role(role_int: int) -> str:
 class Player:
     """Class to store a player's role and rating for use in the game."""
 
-    def __init__(self, user: Member, role: str) -> None:
+    def __init__(self: Self, user: Member, role: str) -> None:
         self.user = user
         self.role = role
         self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
 
-    def report_player_data(self, win: bool):
+    def report_player_data(self: Self, win: bool):
         """Updates the player's rating in the PLAYER_DATA dictionary."""
         player_data_obj: RoleStat = getattr(PlayerData().player_data[str(self.user.id)], self.role)
         print(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")

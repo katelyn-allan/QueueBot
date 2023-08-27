@@ -2,13 +2,12 @@ import trueskill
 import json
 from typing import Any, Dict, List, Self
 from discord import ApplicationContext, Member
-from util.exceptions import *
 
 
 class RoleStat:
     """Tracks a player's stats across a specific role."""
 
-    def __init__(self, init_dict: Dict[str, Any] | None = None) -> None:
+    def __init__(self: Self, init_dict: Dict[str, Any] | None = None) -> None:
         if init_dict:
             self.games_played: int = init_dict["games_played"]
             self.games_won: int = init_dict["games_won"]
@@ -48,7 +47,7 @@ class RoleStat:
 class PlayerStats:
     """Container class for player stats across multiple roles."""
 
-    def __init__(self, init_dict: Dict[str, Any] | None = None) -> None:
+    def __init__(self: Self, init_dict: Dict[str, Any] | None = None) -> None:
         if init_dict:
             self.tank = RoleStat(init_dict["tank"])
             self.support = RoleStat(init_dict["support"])

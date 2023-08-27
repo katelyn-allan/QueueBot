@@ -1,17 +1,17 @@
 import discord
 from discord import ApplicationContext
 import commands.player_stats as player_stats
-from util.exceptions import *
-from typing import List, Dict
+from typing import List, Dict, Self
 from discord.ext import commands
-from util.env_load import *
+
+from util.env_load import ASSASSIN_EMOJI, OFFLANE_EMOJI, SUPPORT_EMOJI, TANK_EMOJI
 
 
 class PlayerInfoCog(commands.Cog):
-    def __init__(self, bot) -> None:
+    def __init__(self: Self, bot) -> None:
         self.bot: discord.Bot = bot
 
-    def convert_stat_dict_to_str_output(self, stats: Dict[str, float]) -> str:
+    def convert_stat_dict_to_str_output(self: Self, stats: Dict[str, float]) -> str:
         """Converts a player stats dict into a string output for reporting."""
         output = ""
         for key, value in stats.items():
@@ -19,7 +19,7 @@ class PlayerInfoCog(commands.Cog):
         return output
 
     @discord.slash_command(name="stats", description="Get your stats")
-    async def slash_get_stats(self, ctx: ApplicationContext):
+    async def slash_get_stats(self: Self, ctx: ApplicationContext):
         stats: Dict[str, Dict[str, float]] = player_stats.get_player_stats(ctx)
         embed = discord.Embed(
             title="Player Stats",
@@ -50,7 +50,7 @@ class PlayerInfoCog(commands.Cog):
         await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
-    async def slash_setup(self, ctx: ApplicationContext):
+    async def slash_setup(self: Self, ctx: ApplicationContext):
         main_role_view = MainRoleSelectView()
         await ctx.respond(
             "Select your main role. Your main role will always be prioritized for match-making when possible.",
@@ -102,7 +102,7 @@ class MainRoleSelectView(discord.ui.View):
             ),
         ],
     )
-    async def main_role_callback(self, select: discord.SelectMenu, interaction: discord.Interaction):
+    async def main_role_callback(self: Self, select: discord.SelectMenu, interaction: discord.Interaction):
         # Disable this menu so the user cannot submit multiple responses.
         select.disabled = True
 
@@ -125,7 +125,7 @@ class MainRoleSelectView(discord.ui.View):
 
 
 class SecondaryRoleSelectView(discord.ui.View):
-    def __init__(self, main_role: str) -> None:
+    def __init__(self: Self, main_role: str) -> None:
         super().__init__()
         self.main_role = main_role
 
@@ -160,7 +160,7 @@ class SecondaryRoleSelectView(discord.ui.View):
             ),
         ],
     )
-    async def secondary_role_callback(self, select: discord.SelectMenu, interaction: discord.Interaction):
+    async def secondary_role_callback(self: Self, select: discord.SelectMenu, interaction: discord.Interaction):
         # Disable this menu so the user cannot submit multiple responses.
         select.disabled = True
 
