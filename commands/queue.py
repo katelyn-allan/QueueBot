@@ -1,4 +1,4 @@
-from discord import ApplicationContext, Member
+from discord import ApplicationContext, Member, Guild
 from typing import List, Dict, Tuple
 from dotenv import load_dotenv
 from util.env_load import (
@@ -32,24 +32,25 @@ load_dotenv()
 QUEUE: List[Member] = []
 
 
-def populate_queue(ctx: ApplicationContext) -> int:
+def populate_queue(guild: Guild) -> int:
     """Populates the queue with all players who have the Queued Role."""
-    if ctx.guild is None:
+    if guild is None:
         raise NoGuildException
-    queued_role = ctx.guild.get_role(QUEUED_ID)
-    for member in ctx.guild.members:
+    queued_role = guild.get_role(QUEUED_ID)
+    for member in guild.members:
         if queued_role in member.roles:
             QUEUE.append(member)
     logger.info(f"Queue initialized with {len(QUEUE)}")
     return len(QUEUE)
 
 
-async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> None:
+async def update_queue_channel(guild: Guild) -> None:
     """Updates the queue channel with the current queue."""
-    if ctx.guild is None:
+    if guild is None:
         raise NoGuildException
 
-    queue_channel = ctx.guild.get_channel(QUEUE_INFO_CHANNEL_ID)
+    queue_channel = guild.get_channel(QUEUE_INFO_CHANNEL_ID)
+    queue_length = len(QUEUE)
     plural = "s" if queue_length != 1 else ""
 
     # Rename the queue channel to display the queue
