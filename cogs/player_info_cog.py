@@ -2,10 +2,10 @@ import time
 import discord
 from discord import ApplicationContext
 import commands.player_stats as player_stats
-from exceptions import *
+from util.exceptions import *
 from typing import List, Dict, Any
 from discord.ext import commands
-from env_load import *
+from util.env_load import *
 
 
 class PlayerInfoCog(commands.Cog):

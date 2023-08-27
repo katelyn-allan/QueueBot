@@ -1,10 +1,10 @@
 import discord
 from discord import ApplicationContext
 import commands.queue as queue
-from exceptions import *
+from util.exceptions import *
 from typing import List, Dict, Any
 from discord.ext import commands
-from env_load import *
+from util.env_load import *
 
 
 class QueueCog(commands.Cog):

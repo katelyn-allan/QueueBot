@@ -1,8 +1,8 @@
 from discord import ApplicationContext, Member, User
 from typing import List, Dict, Tuple
 from dotenv import load_dotenv
-from env_load import *
-from exceptions import *
+from util.env_load import *
+from util.exceptions import *
 
 load_dotenv()
 

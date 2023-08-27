@@ -2,8 +2,8 @@ import discord
 import os
 from dotenv import load_dotenv
 import logging
-from env_load import *
-from exceptions import *
+from util.env_load import *
+from util.exceptions import *
 
 logger = logging.getLogger(__name__)
 

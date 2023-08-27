@@ -1,10 +1,10 @@
 import discord
 from discord import ApplicationContext, Option, option
 import commands.game as game
-from exceptions import *
+from util.exceptions import *
 from typing import List, Dict, Any
 from discord.ext import commands
-from env_load import *
+from util.env_load import *
 
 
 class GameCog(commands.Cog):

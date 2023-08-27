@@ -2,7 +2,7 @@ import trueskill
 import json
 from typing import Any, Dict, List, Self
 from discord import ApplicationContext, Member, User
-from exceptions import *
+from util.exceptions import *
 
 
 class RoleStat:
