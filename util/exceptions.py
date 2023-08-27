@@ -9,7 +9,7 @@ class NotEnoughPlayersException(Exception):
     pass
 
 
-class GameIsInProgressException(Exception):
+class GameInProgressException(Exception):
     """Exception that is called when a game is already in progress."""
 
     pass
@@ -33,12 +33,6 @@ class PlayerNotFoundException(Exception):
 
 class NoValidGameException(Exception):
     """Exception that is called when there is no valid game able to be created."""
-
-    pass
-
-
-class GameInProgressException(Exception):
-    """Exception that is called when a game is already in progress."""
 
     pass
 
@@ -69,7 +63,7 @@ class NoGuildException(Exception):
     pass
 
 
-class CouldNotFindChannelException(Exception):
+class ChannelNotFoundException(Exception):
     """Exception that is called when a channel is not found by its ID."""
 
     def __init__(self: Self, name: str, channel_id: int) -> None:
