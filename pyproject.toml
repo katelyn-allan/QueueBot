@@ -38,9 +38,10 @@ ignore = [
     "D203",
     "D212",
     "D407",
-    "D104", # Mandates file level docstrings for packages
-    "D100", # Mandates file level docstrings for modules
-    "D401", # 'Imperative Mood', very annoying
+    "D104",   # Mandates file level docstrings for packages
+    "D100",   # Mandates file level docstrings for modules
+    "D401",   # 'Imperative Mood', very annoying
+    "FIX002", # Allows TODO statements
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.

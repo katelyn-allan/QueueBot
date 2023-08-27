@@ -2,8 +2,6 @@ import discord
 import os
 from dotenv import load_dotenv
 import logging
-from util.env_load import *
-from util.exceptions import *
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +13,9 @@ bot = discord.Bot(intents=discord.Intents.all())
 
 
 @bot.event
-async def on_ready():
-    print(f"{bot.user} has connected to Discord!")
+async def on_ready() -> None:
+    """Function that runs when the bot is connecting to Discord."""
+    logger.info(f"{bot.user} has connected to Discord!")
 
 
 if __name__ == "__main__":

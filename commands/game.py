@@ -5,7 +5,7 @@ from commands.player_stats import (
     PlayerData,
     RoleStat,
 )
-from typing import List, Dict, Self
+from typing import List, Dict, Self, Type
 import numpy as np
 import itertools
 from scipy.optimize import linear_sum_assignment
@@ -20,6 +20,9 @@ from util.exceptions import (
     NoValidGameException,
     NotAdminException,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def convert_int_to_role(role_int: int) -> str:
@@ -40,14 +43,19 @@ class Player:
     """Class to store a player's role and rating for use in the game."""
 
     def __init__(self: Self, user: Member, role: str) -> None:
+        """Init that takes in a user and role argument to create a Player object.
+
+        Because the default User or Member class does not allow for role assignment, this class acts
+        as a superclass of that more or less that allows for the role to be stored, along with the respective rating.
+        """
         self.user = user
         self.role = role
         self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
 
-    def report_player_data(self: Self, win: bool):
+    def report_player_data(self: Self, win: bool) -> None:
         """Updates the player's rating in the PLAYER_DATA dictionary."""
         player_data_obj: RoleStat = getattr(PlayerData().player_data[str(self.user.id)], self.role)
-        print(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")
+        logger.info(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")
         player_data_obj.rating = self.rating
         player_data_obj.games_played += 1
         if win:
@@ -55,6 +63,11 @@ class Player:
 
 
 class CurrentGame:
+    """Singleton class to track the curent game.
+
+    TODO: Store a list of active games if we allow multiple games to run.
+    """
+
     # TODO: Make this configurable?
     valid_maps = [
         "Alterac Pass",
@@ -71,13 +84,19 @@ class CurrentGame:
     ]
 
     # Instantiate a singleton class, CurrentGame
-    def __new__(cls):
+    def __new__(cls: Type["CurrentGame"]) -> "CurrentGame":
+        """Handle creation of a new class instance.
+
+        Because this is a singleton, we only want to create one instance of this class,
+        and return that same instance if a new one is attempted to be created after.
+        """
         if not hasattr(cls, "instance"):
             cls.instance = super(CurrentGame, cls).__new__(cls)
             cls.instance.initialized = False
         return cls.instance
 
-    def __init__(self) -> None:
+    def __init__(self: Self) -> None:
+        """Initialize this class instance."""
         if hasattr(self, "initialized") and self.initialized:
             return
         else:
@@ -89,6 +108,7 @@ class CurrentGame:
         team_1: Dict[str, Player],
         team_2: Dict[str, Player],
     ) -> None:
+        """Assign the game to the active CurrentGame object."""
         self.team_1 = team_1
         self.team_2 = team_2
         self.map = random.choice(self.valid_maps)
@@ -96,6 +116,7 @@ class CurrentGame:
         self.in_progress = True
 
     def reset_state(self: Self) -> None:
+        """Set the appropriate variables for a default state."""
         self.team_1 = {}
         self.team_2 = {}
         self.map = None
@@ -191,7 +212,7 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict
     for game in valid_games:
         # Find every permutation of team comp, in which a valid team has 5 players: One tank, One Support, Two Assassins, and One Offlane.
         team_combos: List[List[List[Player]]] = get_team_combinations(game)
-        print(f"Found {len(team_combos)} configurations of players for this game group")
+        logger.info(f"Found {len(team_combos)} configurations of players for this game group")
         # TODO: Should we instead compare match quality within team_combos and then take a random game?
         for combo in team_combos:
             team1 = combo[0]
@@ -233,7 +254,7 @@ async def start_game(ctx: ApplicationContext) -> bool:
         if CurrentGame().in_progress:
             raise GameInProgressException("A game is already in progress.")
         valid_games = find_valid_games()
-        print(f"Found {len(valid_games)} valid game configurations...")
+        logger.info(f"Found {len(valid_games)} valid game configurations...")
         if len(valid_games) == 0:
             raise NoValidGameException("Not enough players on each role to make a valid game.")
         best_game = find_best_game(valid_games)
@@ -286,7 +307,7 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext):
         await member.move_to(lobby_voice_channel)
 
 
-def end_game(ctx: ApplicationContext, winner: str):
+def end_game(ctx: ApplicationContext, winner: str) -> None:
     """
     If a game is currently running, ends the game and moves all players back to the lobby.
     Winner: The team that won the game.
@@ -306,31 +327,31 @@ def end_game(ctx: ApplicationContext, winner: str):
         else:
             raise Exception("Invalid winner")
 
-        print(f"\nI think the winning team is {winning_team}\n")
-        print(f"\nI think the losing team is {losing_team}\n")
+        logger.info(f"\nI think the winning team is {winning_team}\n")
+        logger.info(f"\nI think the losing team is {losing_team}\n")
         # Update the ratings of the players
         winning_team_ratings = [player.rating for player in winning_team.values()]
-        print(f"\nWinning team ratings: {winning_team_ratings}")
+        logger.info(f"\nWinning team ratings: {winning_team_ratings}")
         losing_team_ratings = [player.rating for player in losing_team.values()]
-        print(f"\nLosing team ratings: {losing_team_ratings}")
+        logger.info(f"\nLosing team ratings: {losing_team_ratings}")
         winning_team_ratings, losing_team_ratings = trueskill.rate(
             [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
         )
-        print(f"\nUpdated Winning team ratings: {winning_team_ratings}")
-        print(f"\nUpdated Losing team ratings: {losing_team_ratings}")
+        logger.info(f"\nUpdated Winning team ratings: {winning_team_ratings}")
+        logger.info(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
         # Update players' ratings in the tracked player stats, and then re-add them to the queue
         for player in winning_team.values():
-            print(f"Updating player {player.user.display_name}...")
+            logger.info(f"Updating player {player.user.display_name}...")
             player.report_player_data(win=True)
         for player in losing_team.values():
-            print(f"Updating player {player.user.display_name}...")
+            logger.info(f"Updating player {player.user.display_name}...")
             player.report_player_data(win=False)
 
         # Update the saved data to match the data in memory
-        print("Running update_player_data()...")
+        logger.info("Running update_player_data()...")
         PlayerData().update_player_data()
-        print("Player data updated!")
+        logger.info("Player data updated!")
 
         # Reset the current game.
         CurrentGame().reset_state()
@@ -339,7 +360,7 @@ def end_game(ctx: ApplicationContext, winner: str):
         raise NotAdminException("You must be an admin to report the end of a game.")
 
 
-def cancel_game(ctx: ApplicationContext):
+def cancel_game(ctx: ApplicationContext) -> None:
     """If a game is currently running, ends the game and moves all players back to the lobby without reporting winners."""
     if ctx.guild is None:
         raise NoGuildException
