@@ -54,7 +54,7 @@ async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> No
 
 
 def join_queue(ctx: ApplicationContext) -> tuple[int, int]:
-    """Adds user to queue. Returns the user's id and the number of people in the queue."""
+    """Adds user to queue. Returns user's id and number of people in the queue."""
     assert isinstance(ctx.user, Member)
     if ctx.user in QUEUE:
         raise AlreadyInQueueException(ctx.user)
@@ -87,7 +87,8 @@ def get_queue_data(queue: list[Member] = QUEUE) -> dict[str, list[str]]:
         "Offlanes (Fill)": [],
     }
     for user in queue:
-        # For each of the user's roles that match the list in queue_data, append the user's name to the list, with (Fill) if they're a fill
+        # For each of the user's roles that match the list in queue_data,
+        # append the user's name to the list, with (Fill) if they're a fill
         name = user.display_name if user.display_name else user.name
         for role in user.roles:
             if role.id == TANK_ID:
@@ -111,7 +112,7 @@ def get_queue_data(queue: list[Member] = QUEUE) -> dict[str, list[str]]:
 
 
 def leave_queue(ctx: ApplicationContext) -> tuple[int, int]:
-    """Removes player from queue. Returns the user's id and the number of people in the queue."""
+    """Removes user from queue. Returns user's id and number of people in the queue."""
     if ctx.user not in QUEUE:
         raise PlayerNotFoundException(ctx.user)
     QUEUE.remove(ctx.user)

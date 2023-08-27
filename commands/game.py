@@ -47,9 +47,7 @@ class Player:
         player_data_obj: RoleStat = getattr(
             PlayerData().player_data[str(self.user.id)], self.role
         )
-        print(
-            f"I think {self.user.display_name}'s player_data object is {player_data_obj}"
-        )
+        print(f"{self.user.display_name}'s player_data object is {player_data_obj}")
         player_data_obj.rating = self.rating
         player_data_obj.games_played += 1
         if win:
@@ -128,8 +126,8 @@ def find_valid_games() -> list[dict[str, list[Player]]]:
     ]
     valid_games = []
 
-    # For each player in the queue, create a numpy matrix, where the rows are the players,
-    # and the columns are the roles (Tank, Healer, Assassin, Offlane).
+    # For each player in the queue, create a numpy matrix, where the rows are the
+    # players and the columns are the roles (Tank, Healer, Assassin, Offlane).
     # The cost of each player to be assigned to a role is 0 if they have the role,
     # 1 if they are a fill, and 2 if they do not have any roles.
     for perm in combinations_of_players:
@@ -231,7 +229,7 @@ def find_best_game(
                     [player.rating for player in team2],
                 ]
             )
-            # Check if match_quality is closer to 0.5 than the current best match_quality.
+            # Check if match_quality is an improvement to best_quality.
             if abs(0.5 - match_quality) < abs(0.5 - best_quality):
                 best_game = combo
                 best_quality = match_quality
@@ -308,7 +306,7 @@ async def move_player_from_lobby_to_team_voice(
 
 
 async def move_all_team_players_to_lobby(ctx: ApplicationContext) -> None:
-    """For the end of a game, moves all players that are in team_1 or team_2 back to the lobby."""
+    """For the end of a game, moves everyone team voice channels back to the lobby."""
     if ctx.guild is None:
         raise NoGuildException()
     lobby_voice_channel = ctx.guild.get_channel(LOBBY_CHANNEL_ID)
@@ -333,7 +331,7 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext) -> None:
 
 def end_game(ctx: ApplicationContext, winner: str):
     """
-    If a game is currently running, ends the game and moves all players back to the lobby.
+    If a game is currently running, ends it and moves all players back to the lobby.
     Winner: The team that won the game.
     """
     if ctx.guild is None:
@@ -367,7 +365,8 @@ def end_game(ctx: ApplicationContext, winner: str):
         print(f"\nUpdated Winning team ratings: {winning_team_ratings}")
         print(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
-        # Update players' ratings in the tracked player stats, and then re-add them to the queue
+        # Update players' ratings in the tracked player stats,
+        # and then re-add them to the queue
         for player in winning_team.values():
             print(f"Updating player {player.user.display_name}...")
             player.report_player_data(win=True)
