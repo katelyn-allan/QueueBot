@@ -5,7 +5,7 @@ from typing import Dict, Self
 from discord.ext import commands
 
 from util.exceptions import (
-    GameIsInProgressException,
+    GameInProgressException,
     NoGameInProgressException,
     NotAdminException,
     NotEnoughPlayersException,
@@ -78,7 +78,7 @@ class GameCog(commands.Cog):
                 description="Not enough players to start a game!",
             )
             await ctx.respond(embed=embed, ephemeral=True)
-        except GameIsInProgressException:
+        except GameInProgressException:
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),

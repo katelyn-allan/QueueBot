@@ -13,7 +13,7 @@ import random
 from util.env_load import ADMIN_ID, LOBBY_CHANNEL_ID, TEAM_1_CHANNEL_ID, TEAM_2_CHANNEL_ID
 
 from util.exceptions import (
-    CouldNotFindChannelException,
+    ChannelNotFoundException,
     GameInProgressException,
     NoGameInProgressException,
     NoGuildException,
@@ -298,7 +298,7 @@ async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: i
     else:
         raise Exception("Invalid team number")
     if team_voice_channel is None:
-        raise CouldNotFindChannelException(f"Team {team_number} Voice Channel", channel_id)
+        raise ChannelNotFoundException(f"Team {team_number} Voice Channel", channel_id)
     try:
         await disc_user.move_to(team_voice_channel)
     except Exception:
@@ -313,11 +313,11 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext) -> None:
     team_1_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
     team_2_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
     if lobby_voice_channel is None:
-        raise CouldNotFindChannelException("Lobby Voice Channel", LOBBY_CHANNEL_ID)
+        raise ChannelNotFoundException("Lobby Voice Channel", LOBBY_CHANNEL_ID)
     if team_1_voice_channel is None:
-        raise CouldNotFindChannelException("Team 1 Voice Channel", TEAM_1_CHANNEL_ID)
+        raise ChannelNotFoundException("Team 1 Voice Channel", TEAM_1_CHANNEL_ID)
     if team_2_voice_channel is None:
-        raise CouldNotFindChannelException("Team 2 Voice Channel", TEAM_2_CHANNEL_ID)
+        raise ChannelNotFoundException("Team 2 Voice Channel", TEAM_2_CHANNEL_ID)
     for member in team_1_voice_channel.members:
         await member.move_to(lobby_voice_channel)
     for member in team_2_voice_channel.members:

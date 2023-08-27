@@ -15,6 +15,7 @@ from util.env_load import (
 
 from util.exceptions import (
     AlreadyInQueueException,
+    ChannelNotFoundException,
     NoGuildException,
     NoMainRoleException,
     PlayerNotFoundException,
@@ -130,3 +131,4 @@ def populate_queue(guild: Guild) -> int:
     len_queue = len(Queue().queue)
     logger.info(f"Queue initialized with {len_queue}")
     return len_queue
+
