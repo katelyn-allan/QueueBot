@@ -35,7 +35,11 @@ class GameCog(commands.Cog):
                 team2: dict[str, game.Player] = current_game.team_2
                 first_pick = current_game.first_pick
 
-            banner = f"https://static.icy-veins.com/images/heroes/tier-lists/maps/{current_map.replace(' ', '-').lower()}.jpg"
+            banner = (
+                "https://static.icy-veins.com/images/heroes/tier-lists/maps/"
+                + current_map.replace(" ", "-").lower()
+                + ".jpg"
+            )
             embed = discord.Embed(
                 title="**Game Started**",
                 color=discord.Colour.blurple(),
@@ -102,7 +106,10 @@ class GameCog(commands.Cog):
             embed = discord.Embed(
                 title="Game Ended",
                 color=discord.Colour.blurple(),
-                description=f"Game ended by {ctx.user.mention}! Team {winner} are the winners!",
+                description=(
+                    f"Game ended by {ctx.user.mention}! "
+                    + f"Team {winner} are the winners!"
+                ),
             )
             await ctx.respond(embed=embed)
         except NoGameInProgressException:

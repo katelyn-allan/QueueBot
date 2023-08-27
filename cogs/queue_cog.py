@@ -42,14 +42,20 @@ class QueueCog(commands.Cog):
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),
-                description=f"<@{error.user.id}>, you do not have a main role set! Please setup using the `/setup` command and then try again.",
+                description=(
+                    f"<@{error.user.id}>, you do not have a main role set! "
+                    + "Please setup using the `/setup` command and then try again."
+                ),
             )
             await ctx.respond(embed=embed, ephemeral=True)
             return
         embed = discord.Embed(
             title="Queue",
             color=discord.Colour.blurple(),
-            description=f"<@{user_id}> has joined the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+            description=(
+                f"<@{user_id}> has joined the queue! "
+                + f"There {plural_2} now {queue_length} player{plural} in the queue."
+            ),
         )
         await ctx.respond(embed=embed)
         await queue.update_queue_channel(ctx, queue_length)
@@ -129,7 +135,10 @@ class QueueCog(commands.Cog):
         embed = discord.Embed(
             title="Queue",
             color=discord.Colour.blurple(),
-            description=f"<@{user_id}> has left the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+            description=(
+                f"<@{user_id}> has left the queue! "
+                + f"There {plural_2} now {queue_length} player{plural} in the queue."
+            ),
         )
         await ctx.respond(embed=embed)
         await queue.update_queue_channel(ctx, queue_length)
@@ -177,14 +186,20 @@ class QueueCog(commands.Cog):
                 embed = discord.Embed(
                     title="Error",
                     color=discord.Colour.red(),
-                    description=f"<@{error.user.id}> is not in the queue or could not be found!",
+                    description=(
+                        f"<@{error.user.id}> is not in the queue "
+                        + "or could not be found!"
+                    ),
                 )
                 await ctx.respond(embed=embed, ephemeral=True)
                 return
             embed = discord.Embed(
                 title="Queue",
                 color=discord.Colour.blurple(),
-                description=f"<@{user_id}> has been removed from the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+                description=(
+                    f"<@{user_id}> has been removed from the queue! There "
+                    + f"{plural_2} now {queue_length} player{plural} in the queue."
+                ),
             )
             await ctx.respond(embed=embed)
             await queue.update_queue_channel(ctx, queue_length)
@@ -214,7 +229,9 @@ class QueueCog(commands.Cog):
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),
-                description="Only Bot Engineers or Administrators can initialize the bot!",
+                description=(
+                    "Only Bot Engineers or Administrators can initialize the bot!"
+                ),
             )
             await ctx.respond(embed=embed, ephemeral=True)
 

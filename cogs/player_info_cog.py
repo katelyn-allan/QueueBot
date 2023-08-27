@@ -54,7 +54,10 @@ class PlayerInfoCog(commands.Cog):
     async def slash_setup(self, ctx: ApplicationContext):
         main_role_view = MainRoleSelectView()
         await ctx.respond(
-            "Select your main role. Your main role will always be prioritized for match-making when possible.",
+            (
+                "Select your main role. Your main role will "
+                + "always be prioritized for match-making when possible."
+            ),
             view=main_role_view,
             ephemeral=True,
         )
@@ -65,7 +68,10 @@ class PlayerInfoCog(commands.Cog):
             if role.name in ["Tank", "Support", "Assassin", "Offlane"]:
                 main_role = role.name
         await ctx.respond(
-            "Select your secondary roles. These will be used to fill out the rest of the team when your main role is not available.",
+            (
+                "Select your secondary roles. These will be used to fill out the rest "
+                + "of the team when your main role is not available."
+            ),
             view=SecondaryRoleSelectView(main_role=main_role),
             ephemeral=True,
         )
@@ -193,7 +199,10 @@ class SecondaryRoleSelectView(discord.ui.View):
 
         # Report back on our success!
         await interaction.response.edit_message(
-            content=f"Added the {str(role_strings).strip('[]')} roles to {interaction.user.mention}",
+            content=(
+                f"Added the {str(role_strings).strip('[]')} "
+                + f"roles to {interaction.user.mention}"
+            ),
             view=self,
         )
 
