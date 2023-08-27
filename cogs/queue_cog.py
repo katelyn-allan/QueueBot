@@ -131,10 +131,7 @@ class QueueCog(commands.Cog):
 
     @discord.slash_command(name="clear", description="Clear the queue")
     async def slash_clear_queue(self, ctx: ApplicationContext):
-        if (
-            ADMIN_ID in [role.id for role in ctx.user.roles]
-            or ctx.user.guild_permissions.administrator
-        ):
+        if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             queue.clear_queue()
             queued_role = ctx.guild.get_role(QUEUED_ID)
             for member in ctx.guild.members:
@@ -157,10 +154,7 @@ class QueueCog(commands.Cog):
 
     @discord.slash_command(name="remove", description="Remove a player from the queue")
     async def slash_remove_player(self, ctx: ApplicationContext, user: discord.Member):
-        if (
-            ADMIN_ID in [role.id for role in ctx.user.roles]
-            or ctx.user.guild_permissions.administrator
-        ):
+        if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             try:
                 user_id, queue_length = queue.remove_from_queue(user)
                 # Remove the queued role from the user
@@ -193,10 +187,7 @@ class QueueCog(commands.Cog):
 
     @discord.slash_command(name="initialize", description="Initialize the bot")
     async def slash_initialize(self, ctx: ApplicationContext):
-        if (
-            ADMIN_ID in [role.id for role in ctx.user.roles]
-            or ctx.user.guild_permissions.administrator
-        ):
+        if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             queue_len = queue.populate_queue(ctx)
             await queue.update_queue_channel(ctx, queue_len)
             embed = discord.Embed(

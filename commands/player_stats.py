@@ -14,9 +14,7 @@ class RoleStat:
         if init_dict:
             self.games_played: int = init_dict["games_played"]
             self.games_won: int = init_dict["games_won"]
-            self.rating: trueskill.Rating = trueskill.Rating(
-                init_dict["rating"]["mu"], init_dict["rating"]["sigma"]
-            )
+            self.rating: trueskill.Rating = trueskill.Rating(init_dict["rating"]["mu"], init_dict["rating"]["sigma"])
         else:
             self.games_played: int = 0
             self.games_won: int = 0

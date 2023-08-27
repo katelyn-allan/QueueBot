@@ -42,12 +42,8 @@ class Player:
 
     def report_player_data(self, win: bool):
         """Updates the player's rating in the PLAYER_DATA dictionary"""
-        player_data_obj: RoleStat = getattr(
-            PlayerData().player_data[str(self.user.id)], self.role
-        )
-        print(
-            f"I think {self.user.display_name}'s player_data object is {player_data_obj}"
-        )
+        player_data_obj: RoleStat = getattr(PlayerData().player_data[str(self.user.id)], self.role)
+        print(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")
         player_data_obj.rating = self.rating
         player_data_obj.games_played += 1
         if win:
@@ -111,9 +107,7 @@ def find_valid_games() -> List[Dict[str, List[Player]]]:
     players_in_queue: List[Member] = QUEUE.copy()
     PlayerData().instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)
-    combinations_of_players: List[List[Member]] = [
-        list(comb) for comb in itertools.combinations(player_set, 10)
-    ]
+    combinations_of_players: List[List[Member]] = [list(comb) for comb in itertools.combinations(player_set, 10)]
     valid_games = []
 
     # For each player in the queue, create a numpy matrix, where the rows are the players, and the columns are the roles (Tank, Healer, Assassin, Offlane).
@@ -174,9 +168,7 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
         for support in players["support"]:
             for assassin in itertools.combinations(players["assassin"], 2):
                 for offlane in players["offlane"]:
-                    combinations.append(
-                        [tank, support, assassin[0], assassin[1], offlane]
-                    )
+                    combinations.append([tank, support, assassin[0], assassin[1], offlane])
     two_teams = []
     for team1 in combinations:
         for team2 in combinations:
@@ -190,9 +182,7 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
     return two_teams
 
 
-def find_best_game(
-    valid_games: List[Dict[str, List[Player]]]
-) -> Dict[str, Dict[str, Player] | str]:
+def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict[str, Player] | str]:
     """
     Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation.
     """
@@ -241,18 +231,13 @@ async def start_game(ctx: ApplicationContext) -> bool:
     Takes the players from the queue and creates a game.
     """
     assert type(ctx.user) is Member
-    if (
-        ADMIN_ID in [role.id for role in ctx.user.roles]
-        or ctx.user.guild_permissions.administrator
-    ):
+    if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
         if CurrentGame().in_progress:
             raise GameInProgressException("A game is already in progress.")
         valid_games = find_valid_games()
         print(f"Found {len(valid_games)} valid game configurations...")
         if len(valid_games) == 0:
-            raise NoValidGameException(
-                "Not enough players on each role to make a valid game."
-            )
+            raise NoValidGameException("Not enough players on each role to make a valid game.")
         best_game = find_best_game(valid_games)
         CurrentGame().assign_game(best_game["team1"], best_game["team2"])
         for player in best_game["team1"].values():
@@ -264,9 +249,7 @@ async def start_game(ctx: ApplicationContext) -> bool:
         raise NotAdminException("You must be an admin to start a game.")
 
 
-async def move_player_from_lobby_to_team_voice(
-    disc_user: Member, team_number: int, ctx: ApplicationContext
-):
+async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: int, ctx: ApplicationContext):
     """
     Moves a player from the lobby voice channel to the Team 1 voice channel.
     """
@@ -281,9 +264,7 @@ async def move_player_from_lobby_to_team_voice(
     else:
         raise Exception("Invalid team number")
     if team_voice_channel is None:
-        raise CouldNotFindChannelException(
-            f"Team {team_number} Voice Channel", channel_id
-        )
+        raise CouldNotFindChannelException(f"Team {team_number} Voice Channel", channel_id)
     try:
         await disc_user.move_to(team_voice_channel)
     except Exception:
@@ -319,10 +300,7 @@ def end_game(ctx: ApplicationContext, winner: str):
     if ctx.guild is None:
         raise NoGuildException()
     assert type(ctx.user) is Member
-    if (
-        ADMIN_ID in [role.id for role in ctx.user.roles]
-        or ctx.user.guild_permissions.administrator
-    ):
+    if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
         if not CurrentGame().in_progress:
             raise NoGameInProgressException("No game is currently in progress.")
         if winner == "team 1":
@@ -341,9 +319,7 @@ def end_game(ctx: ApplicationContext, winner: str):
         print(f"\nWinning team ratings: {winning_team_ratings}")
         losing_team_ratings = [player.rating for player in losing_team.values()]
         print(f"\nLosing team ratings: {losing_team_ratings}")
-        winning_team_ratings, losing_team_ratings = trueskill.rate(
-            [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
-        )
+        winning_team_ratings, losing_team_ratings = trueskill.rate([winning_team_ratings, losing_team_ratings], ranks=[0, 1])
         print(f"\nUpdated Winning team ratings: {winning_team_ratings}")
         print(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
@@ -374,10 +350,7 @@ def cancel_game(ctx: ApplicationContext):
     if ctx.guild is None:
         raise NoGuildException()
     assert type(ctx.user) is Member
-    if (
-        ADMIN_ID in [role.id for role in ctx.user.roles]
-        or ctx.user.guild_permissions.administrator
-    ):
+    if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
         if not CurrentGame().in_progress:
             raise NoGameInProgressException("No game is currently in progress.")
         # Move everyone back to the lobby.

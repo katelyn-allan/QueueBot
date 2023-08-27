@@ -44,12 +44,7 @@ def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
         raise AlreadyInQueueException(ctx.user)
     # Raise an error if the user does not have a main role set
     user_roles = [role.id for role in ctx.user.roles]
-    if (
-        TANK_ID not in user_roles
-        and SUPPORT_ID not in user_roles
-        and ASSASSIN_ID not in user_roles
-        and OFFLANE_ID not in user_roles
-    ):
+    if TANK_ID not in user_roles and SUPPORT_ID not in user_roles and ASSASSIN_ID not in user_roles and OFFLANE_ID not in user_roles:
         raise NoMainRoleException(ctx.user)
     QUEUE.append(ctx.user)
     # Assign the user the queued role
@@ -57,9 +52,7 @@ def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
     return ctx.user.id, len(QUEUE)
 
 
-def get_queue_data(
-    ctx: ApplicationContext, queue: List[Member] = QUEUE
-) -> Dict[str, List[str]]:
+def get_queue_data(ctx: ApplicationContext, queue: List[Member] = QUEUE) -> Dict[str, List[str]]:
     """Lists the players in the queue and their roles"""
     # For each User in the queue list their roles in the current guild
     queue_data = {
