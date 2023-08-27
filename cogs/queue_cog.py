@@ -1,7 +1,7 @@
 import discord
 from discord import ApplicationContext
 import commands.queue as queue
-from typing import List, Any, Self
+from typing import Self
 from discord.ext import commands
 
 from util.env_load import ADMIN_ID, ASSASSIN_EMOJI, OFFLANE_EMOJI, QUEUED_ID, SUPPORT_EMOJI, TANK_EMOJI
@@ -14,13 +14,6 @@ class QueueCog(commands.Cog):
     def __init__(self: Self, bot: discord.Bot) -> None:
         """Initialize this cog with the bot."""
         self.bot: discord.Bot = bot
-
-    def convert_list_to_string(self: Self, input_list: List[Any]) -> str:
-        """Converts a list to a long-form string."""
-        return_str = ""
-        for item in input_list:
-            return_str += f"{item}\n"
-        return return_str
 
     @discord.slash_command(name="join", description="Join the queue for a game")
     async def slash_join_queue(self: Self, ctx: ApplicationContext) -> None:
@@ -67,45 +60,45 @@ class QueueCog(commands.Cog):
         )
         embed.add_field(
             name=f"Tanks {TANK_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Tanks", [])),
+            value="\n".join(queue_info.get("Tanks", [])),
             inline=True,
         )
         embed.add_field(
             name=f"Tanks (FILL) {TANK_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Tanks (Fill)", [])),
+            value="\n".join(queue_info.get("Tanks (Fill)", [])),
             inline=True,
         )
         embed.add_field(name="", value="\n")
         embed.add_field(
             name=f"Supports {SUPPORT_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Supports", [])),
+            value="\n".join(queue_info.get("Supports", [])),
             inline=True,
         )
         embed.add_field(
             name=f"Supports (FILL) {SUPPORT_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Supports (Fill)", [])),
+            value="\n".join(queue_info.get("Supports (Fill)", [])),
             inline=True,
         )
         embed.add_field(name="", value="\n")
         embed.add_field(
             name=f"Assassins {ASSASSIN_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Assassins", [])),
+            value="\n".join(queue_info.get("Assassins", [])),
             inline=True,
         )
         embed.add_field(
             name=f"Assassins (FILL) {ASSASSIN_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Assassins (Fill)", [])),
+            value="\n".join(queue_info.get("Assassins (Fill)", [])),
             inline=True,
         )
         embed.add_field(name="", value="\n")
         embed.add_field(
             name=f"Offlanes {OFFLANE_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Offlanes", [])),
+            value="\n".join(queue_info.get("Offlanes", [])),
             inline=True,
         )
         embed.add_field(
             name=f"Offlanes (FILL) {OFFLANE_EMOJI}",
-            value=self.convert_list_to_string(queue_info.get("Offlanes (Fill)", [])),
+            value="\n".join(queue_info.get("Offlanes (Fill)", [])),
             inline=True,
         )
         embed.add_field(name="", value="\n")
