@@ -1,6 +1,6 @@
 import trueskill
 from discord import ApplicationContext, Member
-from commands.queue import QUEUE
+from commands.queue import Queue
 from commands.player_stats import (
     PlayerData,
     RoleStat,
@@ -185,7 +185,7 @@ def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, Li
 
 def find_valid_games() -> List[Dict[str, List[Player]]]:
     """Finds all valid games of 10 players from the queue."""
-    players_in_queue: List[Member] = QUEUE.copy()
+    players_in_queue: List[Member] = Queue().queue.copy()
     PlayerData().instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)
     combinations_of_players: List[List[Member]] = [list(comb) for comb in itertools.combinations(player_set, 10)]

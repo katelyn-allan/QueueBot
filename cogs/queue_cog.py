@@ -1,7 +1,9 @@
 import discord
 from discord import ApplicationContext
-import commands.queue as queue
-from typing import Self
+
+from commands.queue import Queue
+from typing import List, Any, Self
+
 from discord.ext import commands
 
 from util.env_load import ADMIN_ID, ASSASSIN_EMOJI, OFFLANE_EMOJI, QUEUED_ID, SUPPORT_EMOJI, TANK_EMOJI
@@ -19,7 +21,7 @@ class QueueCog(commands.Cog):
     async def slash_join_queue(self: Self, ctx: ApplicationContext) -> None:
         """Joins the queue."""
         try:
-            user_id, queue_length = queue.join_queue(ctx)
+            user_id, queue_length = Queue().join_queue(ctx)
             queued_role = ctx.guild.get_role(QUEUED_ID)
             await ctx.user.add_roles(queued_role)
             plural = "s" if queue_length != 1 else ""
@@ -46,17 +48,16 @@ class QueueCog(commands.Cog):
             description=f"<@{user_id}> has joined the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
-        await queue.update_queue_channel(ctx.guild)
 
     @discord.slash_command(name="list", description="List the players in the queue")
     async def slash_list_queue(self: Self, ctx: ApplicationContext) -> None:
         """Lists the queue in a stylized format."""
-        queue_info = queue.get_queue_data(ctx)
+        queue_info = Queue().as_dict()
         thumbnail = discord.File("images/hotslogo.png", filename="hotslogo.png")
         embed = discord.Embed(
             title="Queue",
             color=discord.Colour.blurple(),
-            description=f"Players in Queue: {len(queue.QUEUE)}",
+            description=f"Players in Queue: {len(Queue.queue)}",
         )
         embed.add_field(
             name=f"Tanks {TANK_EMOJI}",
@@ -109,7 +110,7 @@ class QueueCog(commands.Cog):
     async def slash_leave_queue(self: Self, ctx: ApplicationContext) -> None:
         """Leaves the queue."""
         try:
-            user_id, queue_length = queue.leave_queue(ctx)
+            user_id, queue_length = Queue().leave_queue(ctx)
             queued_role = ctx.guild.get_role(QUEUED_ID)
             await ctx.user.remove_roles(queued_role)
             plural = "s" if queue_length != 1 else ""
@@ -128,13 +129,12 @@ class QueueCog(commands.Cog):
             description=f"<@{user_id}> has left the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
-        await queue.update_queue_channel(ctx.guild)
 
     @discord.slash_command(name="clear", description="Clear the queue")
     async def slash_clear_queue(self: Self, ctx: ApplicationContext) -> None:
         """Clears the queue. Admin command."""
         if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
-            queue.clear_queue()
+            Queue().queue.clear()
             queued_role = ctx.guild.get_role(QUEUED_ID)
             for member in ctx.guild.members:
                 if queued_role in member.roles:
@@ -145,7 +145,6 @@ class QueueCog(commands.Cog):
                 description="Queue cleared!",
             )
             await ctx.respond(embed=embed)
-            await queue.update_queue_channel(ctx.guild)
         else:
             embed = discord.Embed(
                 title="Error",
@@ -159,7 +158,7 @@ class QueueCog(commands.Cog):
         """Removes a player from the queue. Admin command."""
         if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             try:
-                user_id, queue_length = queue.remove_from_queue(user)
+                user_id, queue_length = Queue().remove_from_queue(user)
                 # Remove the queued role from the user
                 queued_role = ctx.guild.get_role(QUEUED_ID)
                 await user.remove_roles(queued_role)
@@ -179,7 +178,6 @@ class QueueCog(commands.Cog):
                 description=f"<@{user_id}> has been removed from the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
             )
             await ctx.respond(embed=embed)
-            await queue.update_queue_channel(ctx.guild)
         else:
             embed = discord.Embed(
                 title="Error",

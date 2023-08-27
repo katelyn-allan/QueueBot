@@ -23,10 +23,12 @@ async def on_ready() -> None:
     logger.info(f"{bot.user} has connected to Discord!")
     for guild in bot.guilds:
         queue.populate_queue(guild)
-        await queue.update_queue_channel(guild)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+    )
     bot.load_extension("cogs.game_cog")
     bot.load_extension("cogs.queue_cog")
     bot.load_extension("cogs.player_info_cog")
