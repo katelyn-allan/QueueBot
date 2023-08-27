@@ -301,7 +301,7 @@ async def move_player_from_lobby_to_team_voice(
     assert isinstance(team_voice_channel, VoiceChannel)
     try:
         await disc_user.move_to(team_voice_channel)
-    except (Forbidden, HTTPException):
+    except Forbidden | HTTPException:
         pass
 
 
