@@ -22,6 +22,10 @@ from util.exceptions import (
     PlayerNotFoundException,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 
@@ -36,7 +40,7 @@ def populate_queue(ctx: ApplicationContext) -> int:
     for member in ctx.guild.members:
         if queued_role in member.roles:
             QUEUE.append(member)
-    print(f"Queue initialized with {len(QUEUE)}")
+    logger.info(f"Queue initialized with {len(QUEUE)}")
     return len(QUEUE)
 
 
@@ -52,7 +56,7 @@ async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> No
     if queue_channel is None:
         raise CouldNotFindChannelException("Queue Info Channel", QUEUE_INFO_CHANNEL_ID)
     await queue_channel.edit(name=f"QUEUE | {queue_length} player{plural}")
-    print("Successfully updated the queue channel")
+    logger.info("Successfully updated the queue channel")
 
 
 def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
@@ -75,7 +79,7 @@ def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
     return ctx.user.id, len(QUEUE)
 
 
-def get_queue_data(ctx: ApplicationContext, queue: List[Member] = QUEUE) -> Dict[str, List[str]]:
+def get_queue_data(ctx: ApplicationContext, queue: List[Member] = QUEUE) -> Dict[str, List[str]]:  # noqa: C901
     """Lists the players in the queue and their roles."""
     # For each User in the queue list their roles in the current guild
     queue_data = {
@@ -89,24 +93,26 @@ def get_queue_data(ctx: ApplicationContext, queue: List[Member] = QUEUE) -> Dict
         "Offlanes (Fill)": [],
     }
     for user in queue:
-        # For each of the user's roles that match the list in queue_data, append the user's name to the list, with (Fill) if they're a fill
+        # For each of the user's roles that match the list in queue_data,
+        # append the user's name to the list, with (Fill) if they're a fill
         name = user.display_name if user.display_name else user.name
         for role in user.roles:
-            if role.id == TANK_ID:
+            role_id = role.id
+            if role_id == TANK_ID:
                 queue_data["Tanks"].append(name)
-            if role.id == SUPPORT_ID:
+            elif role_id == SUPPORT_ID:
                 queue_data["Supports"].append(name)
-            if role.id == ASSASSIN_ID:
+            elif role_id == ASSASSIN_ID:
                 queue_data["Assassins"].append(name)
-            if role.id == OFFLANE_ID:
+            elif role_id == OFFLANE_ID:
                 queue_data["Offlanes"].append(name)
-            if role.id == TANK_FILL_ID:
+            elif role_id == TANK_FILL_ID:
                 queue_data["Tanks (Fill)"].append(name)
-            if role.id == SUPPORT_FILL_ID:
+            elif role_id == SUPPORT_FILL_ID:
                 queue_data["Supports (Fill)"].append(name)
-            if role.id == ASSASSIN_FILL_ID:
+            elif role_id == ASSASSIN_FILL_ID:
                 queue_data["Assassins (Fill)"].append(name)
-            if role.id == OFFLANE_FILL_ID:
+            elif role_id == OFFLANE_FILL_ID:
                 queue_data["Offlanes (Fill)"].append(name)
 
     return queue_data

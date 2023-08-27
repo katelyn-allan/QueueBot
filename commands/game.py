@@ -129,6 +129,9 @@ def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, Li
 
     Uses the Hungarian Algorithm to resolve role priority.
 
+    A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes.
+    Players are priotized onto their primary role.
+
     For each player in the queue, create a numpy matrix,
     where the rows are the players, and the columns are
     the roles (Tank, Healer, Assassin, Offlane).
@@ -181,11 +184,7 @@ def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, Li
 
 
 def find_valid_games() -> List[Dict[str, List[Player]]]:
-    """
-    Finds all valid games of 10 players from the queue.
-
-    A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
-    """
+    """Finds all valid games of 10 players from the queue."""
     players_in_queue: List[Member] = QUEUE.copy()
     PlayerData().instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)

@@ -1,6 +1,6 @@
 import trueskill
 import json
-from typing import Any, Dict, List, Self
+from typing import Any, Dict, List, Self, Type
 from discord import ApplicationContext, Member
 
 
@@ -8,6 +8,7 @@ class RoleStat:
     """Tracks a player's stats across a specific role."""
 
     def __init__(self: Self, init_dict: Dict[str, Any] | None = None) -> None:
+        """Initializes the RoleStat class."""
         if init_dict:
             self.games_played: int = init_dict["games_played"]
             self.games_won: int = init_dict["games_won"]
@@ -17,7 +18,7 @@ class RoleStat:
             self.games_won: int = 0
             self.rating = trueskill.Rating()
 
-    def convert_to_dict(self) -> Dict[str, float | str]:
+    def convert_to_dict(self: Self) -> Dict[str, float | str]:
         """Converts all fields to dictionaries to allow dumping to json."""
         outp = {}
         outp["games_played"] = self.games_played
@@ -28,7 +29,7 @@ class RoleStat:
         }
         return outp
 
-    def get_stats(self) -> Dict[str, float | str]:
+    def get_stats(self: Self) -> Dict[str, float | str]:
         """Returns a dictionary of the player's stats."""
         if self.games_played != 0:
             return {
@@ -48,6 +49,7 @@ class PlayerStats:
     """Container class for player stats across multiple roles."""
 
     def __init__(self: Self, init_dict: Dict[str, Any] | None = None) -> None:
+        """Initializes the PlayerStats class."""
         if init_dict:
             self.tank = RoleStat(init_dict["tank"])
             self.support = RoleStat(init_dict["support"])
@@ -59,7 +61,7 @@ class PlayerStats:
             self.assassin = RoleStat()
             self.offlane = RoleStat()
 
-    def convert_to_dict(self) -> Dict[str, float | str]:
+    def convert_to_dict(self: Self) -> Dict[str, float | str]:
         """Converts all fields to dictionaries to allow dumping to json."""
         outp = {}
         outp["tank"] = self.tank.convert_to_dict()
@@ -72,12 +74,14 @@ class PlayerStats:
 class PlayerData:
     """Singleton class holding player data."""
 
-    def __new__(cls):
+    def __new__(cls: Type["PlayerData"]) -> "PlayerData":
+        """Creates a singleton instance of the PlayerData class."""
         if not hasattr(cls, "instance"):
             cls.instance = super(PlayerData, cls).__new__(cls)
         return cls.instance
 
     def __init__(self: Self) -> None:
+        """Initializes the player_data dict from the json file."""
         if not hasattr(self, "player_data"):
             self.player_data: Dict[str, PlayerStats] = self.load_player_data()
 
@@ -89,7 +93,7 @@ class PlayerData:
                 dict_load[key] = PlayerStats(value)
             return dict_load
 
-    def reload_palyer_data(self: Self):
+    def reload_palyer_data(self: Self) -> None:
         """Reloads player data."""
         self.player_data: Dict[str, PlayerStats] = self.load_player_data()
 
@@ -103,6 +107,7 @@ class PlayerData:
         self.reload_palyer_data()
 
     def instantiate_new_players(self: Self, users: List[Member]) -> None:
+        """Instantiates new players in the player_data dict."""
         for user in users:
             if user.id not in self.player_data:
                 self.player_data[str(user.id)] = PlayerStats()
