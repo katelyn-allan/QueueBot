@@ -1,4 +1,4 @@
-name: pre-commit
+name: Pre-Commit (Black & Ruff)
 
 on:
   pull_request:
