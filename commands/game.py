@@ -1,5 +1,5 @@
 import trueskill
-from discord import ApplicationContext, Member, User
+from discord import ApplicationContext, Member
 from commands.queue import QUEUE
 from commands.player_stats import (
     PlayerData,
@@ -15,9 +15,7 @@ from util.env_load import *
 
 
 def convert_int_to_role(role_int: int) -> str:
-    """
-    Helper function which turns a cost matrix indicy into a role string
-    """
+    """Helper function which turns a cost matrix indicy into a role string."""
     if role_int == 0 or role_int == 1:
         return "tank"
     elif role_int == 2 or role_int == 3:
@@ -31,17 +29,15 @@ def convert_int_to_role(role_int: int) -> str:
 
 
 class Player:
-    """
-    Class to store a player's role and rating for use in the game
-    """
+    """Class to store a player's role and rating for use in the game."""
 
-    def __init__(self, user: Member, role: str):
+    def __init__(self, user: Member, role: str) -> None:
         self.user = user
         self.role = role
         self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
 
     def report_player_data(self, win: bool):
-        """Updates the player's rating in the PLAYER_DATA dictionary"""
+        """Updates the player's rating in the PLAYER_DATA dictionary."""
         player_data_obj: RoleStat = getattr(PlayerData().player_data[str(self.user.id)], self.role)
         print(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")
         player_data_obj.rating = self.rating
@@ -73,7 +69,7 @@ class CurrentGame:
             cls.instance.initialized = False
         return cls.instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if hasattr(self, "initialized") and self.initialized:
             return
         else:
@@ -160,9 +156,7 @@ def find_valid_games() -> List[Dict[str, List[Player]]]:
 
 
 def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Player]]]:
-    """
-    Finds every combination of players by role and returns a list of unique two team combinations.
-    """
+    """Finds every combination of players by role and returns a list of unique two team combinations."""
     combinations = []
     for tank in players["tank"]:
         for support in players["support"]:
@@ -183,9 +177,7 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
 
 
 def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict[str, Player] | str]:
-    """
-    Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation.
-    """
+    """Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation."""
     best_game = None
     best_quality = 10000
     for game in valid_games:
@@ -227,9 +219,7 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict
 
 
 async def start_game(ctx: ApplicationContext) -> bool:
-    """
-    Takes the players from the queue and creates a game.
-    """
+    """Takes the players from the queue and creates a game."""
     assert type(ctx.user) is Member
     if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
         if CurrentGame().in_progress:
@@ -250,11 +240,9 @@ async def start_game(ctx: ApplicationContext) -> bool:
 
 
 async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: int, ctx: ApplicationContext):
-    """
-    Moves a player from the lobby voice channel to the Team 1 voice channel.
-    """
+    """Moves a player from the lobby voice channel to the Team 1 voice channel."""
     if ctx.guild is None:
-        raise NoGuildException()
+        raise NoGuildException
     if team_number == 1:
         team_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
         channel_id = TEAM_1_CHANNEL_ID
@@ -272,11 +260,9 @@ async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: i
 
 
 async def move_all_team_players_to_lobby(ctx: ApplicationContext):
-    """
-    For the end of a game, moves all players that are in team_1 or team_2 back to the lobby.
-    """
+    """For the end of a game, moves all players that are in team_1 or team_2 back to the lobby."""
     if ctx.guild is None:
-        raise NoGuildException()
+        raise NoGuildException
     lobby_voice_channel = ctx.guild.get_channel(LOBBY_CHANNEL_ID)
     team_1_voice_channel = ctx.guild.get_channel(TEAM_1_CHANNEL_ID)
     team_2_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
@@ -298,7 +284,7 @@ def end_game(ctx: ApplicationContext, winner: str):
     Winner: The team that won the game.
     """
     if ctx.guild is None:
-        raise NoGuildException()
+        raise NoGuildException
     assert type(ctx.user) is Member
     if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
         if not CurrentGame().in_progress:
@@ -344,11 +330,9 @@ def end_game(ctx: ApplicationContext, winner: str):
 
 
 def cancel_game(ctx: ApplicationContext):
-    """
-    If a game is currently running, ends the game and moves all players back to the lobby without reporting winners.
-    """
+    """If a game is currently running, ends the game and moves all players back to the lobby without reporting winners."""
     if ctx.guild is None:
-        raise NoGuildException()
+        raise NoGuildException
     assert type(ctx.user) is Member
     if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
         if not CurrentGame().in_progress:

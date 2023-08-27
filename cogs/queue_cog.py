@@ -2,13 +2,13 @@ import discord
 from discord import ApplicationContext
 import commands.queue as queue
 from util.exceptions import *
-from typing import List, Dict, Any
+from typing import List, Any
 from discord.ext import commands
 from util.env_load import *
 
 
 class QueueCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot: discord.Bot = bot
 
     @discord.slash_command(name="join", description="Join the queue for a game")
@@ -140,7 +140,7 @@ class QueueCog(commands.Cog):
             embed = discord.Embed(
                 title="Queue",
                 color=discord.Colour.blurple(),
-                description=f"Queue cleared!",
+                description="Queue cleared!",
             )
             await ctx.respond(embed=embed)
             await queue.update_queue_channel(ctx, 0)
@@ -193,7 +193,7 @@ class QueueCog(commands.Cog):
             embed = discord.Embed(
                 title="Queue",
                 color=discord.Colour.blurple(),
-                description=f"Bot initialized and queue populated.",
+                description="Bot initialized and queue populated.",
             )
             await ctx.respond(embed=embed, ephemeral=True)
         else:

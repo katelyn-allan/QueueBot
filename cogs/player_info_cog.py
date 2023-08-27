@@ -1,21 +1,18 @@
-import time
 import discord
 from discord import ApplicationContext
 import commands.player_stats as player_stats
 from util.exceptions import *
-from typing import List, Dict, Any
+from typing import List, Dict
 from discord.ext import commands
 from util.env_load import *
 
 
 class PlayerInfoCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot: discord.Bot = bot
 
     def convert_stat_dict_to_str_output(self, stats: Dict[str, float]) -> str:
-        """
-        Converts a player stats dict into a string output for reporting
-        """
+        """Converts a player stats dict into a string output for reporting."""
         output = ""
         for key, value in stats.items():
             output += f"**{key.replace('_', ' ').capitalize()}:** {value}\n"
@@ -128,7 +125,7 @@ class MainRoleSelectView(discord.ui.View):
 
 
 class SecondaryRoleSelectView(discord.ui.View):
-    def __init__(self, main_role: str):
+    def __init__(self, main_role: str) -> None:
         super().__init__()
         self.main_role = main_role
 

@@ -1,14 +1,14 @@
 import discord
-from discord import ApplicationContext, Option, option
+from discord import ApplicationContext, option
 import commands.game as game
 from util.exceptions import *
-from typing import List, Dict, Any
+from typing import Dict
 from discord.ext import commands
 from util.env_load import *
 
 
 class GameCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot: discord.Bot = bot
 
     def convert_team_to_string(self, team: Dict[str, game.Player]) -> str:
@@ -40,16 +40,16 @@ class GameCog(commands.Cog):
                 icon_url=ctx.user.display_avatar,
             )
             embed.add_field(
-                name=f"Team 1" + (" (First Pick)" if fp == 1 else ""),
+                name="Team 1" + (" (First Pick)" if fp == 1 else ""),
                 value=self.convert_team_to_string(team1),
                 inline=True,
             )
             embed.add_field(
                 name="VS.",
-                value=f"TANK\n\nSUPPORT\n\nASSASSIN\n\nASSASSIN\n\nOFFLANE",
+                value="TANK\n\nSUPPORT\n\nASSASSIN\n\nASSASSIN\n\nOFFLANE",
             )
             embed.add_field(
-                name=f"Team 2" + (" (First Pick)" if fp == 2 else ""),
+                name="Team 2" + (" (First Pick)" if fp == 2 else ""),
                 value=self.convert_team_to_string(team2),
                 inline=True,
             )

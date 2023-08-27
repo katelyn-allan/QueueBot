@@ -1,4 +1,4 @@
-from discord import ApplicationContext, Member, User
+from discord import ApplicationContext, Member
 from typing import List, Dict, Tuple
 from dotenv import load_dotenv
 from util.env_load import *
@@ -11,9 +11,9 @@ QUEUE: List[Member] = []
 
 
 def populate_queue(ctx: ApplicationContext) -> int:
-    """Populates the queue with all players who have the Queued Role"""
+    """Populates the queue with all players who have the Queued Role."""
     if ctx.guild is None:
-        raise NoGuildException()
+        raise NoGuildException
     queued_role = ctx.guild.get_role(QUEUED_ID)
     for member in ctx.guild.members:
         if queued_role in member.roles:
@@ -23,9 +23,9 @@ def populate_queue(ctx: ApplicationContext) -> int:
 
 
 async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> None:
-    """Updates the queue channel with the current queue"""
+    """Updates the queue channel with the current queue."""
     if ctx.guild is None:
-        raise NoGuildException()
+        raise NoGuildException
 
     queue_channel = ctx.guild.get_channel(QUEUE_INFO_CHANNEL_ID)
     plural = "s" if queue_length != 1 else ""
@@ -38,7 +38,7 @@ async def update_queue_channel(ctx: ApplicationContext, queue_length: int) -> No
 
 
 def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
-    """Facilitates joining the queue, returns the user's id and the number of people in the queue"""
+    """Facilitates joining the queue, returns the user's id and the number of people in the queue."""
     assert type(ctx.user) is Member
     if ctx.user in QUEUE:
         raise AlreadyInQueueException(ctx.user)
@@ -53,7 +53,7 @@ def join_queue(ctx: ApplicationContext) -> Tuple[int, int]:
 
 
 def get_queue_data(ctx: ApplicationContext, queue: List[Member] = QUEUE) -> Dict[str, List[str]]:
-    """Lists the players in the queue and their roles"""
+    """Lists the players in the queue and their roles."""
     # For each User in the queue list their roles in the current guild
     queue_data = {
         "Tanks": [],
@@ -90,7 +90,7 @@ def get_queue_data(ctx: ApplicationContext, queue: List[Member] = QUEUE) -> Dict
 
 
 def leave_queue(ctx: ApplicationContext) -> Tuple[int, int]:
-    """Facilitates leaving the queue, returns the user's id and the number of people in the queue"""
+    """Facilitates leaving the queue, returns the user's id and the number of people in the queue."""
     if ctx.user not in QUEUE:
         raise PlayerNotFoundException(ctx.user)
     QUEUE.remove(ctx.user)
@@ -99,12 +99,12 @@ def leave_queue(ctx: ApplicationContext) -> Tuple[int, int]:
 
 
 def clear_queue() -> None:
-    """Clears the queue"""
+    """Clears the queue."""
     QUEUE.clear()
 
 
 def remove_from_queue(user: Member) -> Tuple[int, int]:
-    """Removes a player from the queue"""
+    """Removes a player from the queue."""
     if user not in QUEUE:
         raise PlayerNotFoundException(user)
     QUEUE.remove(user)
