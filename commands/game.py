@@ -5,7 +5,7 @@ from commands.player_stats import (
     PlayerData,
     RoleStat,
 )
-from typing import List, Dict, Self, Type
+from typing import List, Dict, Optional, Self, Type
 import numpy as np
 import itertools
 from scipy.optimize import linear_sum_assignment
@@ -124,9 +124,66 @@ class CurrentGame:
         self.in_progress = False
 
 
+def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, List[Player]]]:
+    """For a permutation of 10 players, find a valid game, if one exists.
+
+    Uses the Hungarian Algorithm to resolve role priority.
+
+    For each player in the queue, create a numpy matrix,
+    where the rows are the players, and the columns are
+    the roles (Tank, Healer, Assassin, Offlane).
+    The cost of each player to be assigned to a role is 0 if they have the role,
+    1 if they are a fill, and 2 if they do not have any roles.
+    """
+    matrix = np.full((len(perm), 10), 2)
+    for i, player in enumerate(perm):
+        for role in player.roles:
+            match role.name:
+                case "Tank":
+                    matrix[i][0] = 0
+                    matrix[i][1] = 0
+                case "Tank (Fill)":
+                    matrix[i][0] = 1
+                    matrix[i][1] = 1
+                case "Support":
+                    matrix[i][2] = 0
+                    matrix[i][3] = 0
+                case "Support (Fill)":
+                    matrix[i][2] = 1
+                    matrix[i][3] = 1
+                case "Assassin":
+                    matrix[i][4] = 0
+                    matrix[i][5] = 0
+                    matrix[i][6] = 0
+                    matrix[i][7] = 0
+                case "Assassin (Fill)":
+                    matrix[i][4] = 1
+                    matrix[i][5] = 1
+                    matrix[i][6] = 1
+                    matrix[i][7] = 1
+                case "Offlane":
+                    matrix[i][8] = 0
+                    matrix[i][9] = 0
+                case "Offlane (Fill)":
+                    matrix[i][8] = 1
+                    matrix[i][9] = 1
+    # Find the optimal matching using the Hungarian Algorithm
+    # https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.optimize.linear_sum_assignment.html
+    row_ind, col_ind = linear_sum_assignment(matrix)
+    # Check if this is a valid set, if not, continue to the next 10 perm.
+    if any(matrix[row_ind, col_ind] == 2):
+        return
+    game_dict = {"tank": [], "support": [], "assassin": [], "offlane": []}
+    for i, player in enumerate(perm):
+        role = convert_int_to_role(col_ind[i])
+        game_dict[role].append(Player(player, role))
+    return game_dict
+
+
 def find_valid_games() -> List[Dict[str, List[Player]]]:
     """
     Finds all valid games of 10 players from the queue.
+
     A valid game has: 2 tanks, 2 supports, 4 assassins, and 2 offlanes. Players are priotized onto their primary role.
     """
     players_in_queue: List[Member] = QUEUE.copy()
@@ -135,51 +192,10 @@ def find_valid_games() -> List[Dict[str, List[Player]]]:
     combinations_of_players: List[List[Member]] = [list(comb) for comb in itertools.combinations(player_set, 10)]
     valid_games = []
 
-    # For each player in the queue, create a numpy matrix, where the rows are the players, and the columns are the roles (Tank, Healer, Assassin, Offlane).
-    # The cost of each player to be assigned to a role is 0 if they have the role, 1 if they are a fill, and 2 if they do not have any roles.
     for perm in combinations_of_players:
-        matrix = np.full((len(perm), 10), 2)
-        for i, player in enumerate(perm):
-            for role in player.roles:
-                if role.name == "Tank":
-                    matrix[i][0] = 0
-                    matrix[i][1] = 0
-                elif role.name == "Tank (Fill)":
-                    matrix[i][0] = 1
-                    matrix[i][1] = 1
-                elif role.name == "Support":
-                    matrix[i][2] = 0
-                    matrix[i][3] = 0
-                elif role.name == "Support (Fill)":
-                    matrix[i][2] = 1
-                    matrix[i][3] = 1
-                elif role.name == "Assassin":
-                    matrix[i][4] = 0
-                    matrix[i][5] = 0
-                    matrix[i][6] = 0
-                    matrix[i][7] = 0
-                elif role.name == "Assassin (Fill)":
-                    matrix[i][4] = 1
-                    matrix[i][5] = 1
-                    matrix[i][6] = 1
-                    matrix[i][7] = 1
-                elif role.name == "Offlane":
-                    matrix[i][8] = 0
-                    matrix[i][9] = 0
-                elif role.name == "Offlane (Fill)":
-                    matrix[i][8] = 1
-                    matrix[i][9] = 1
-        # Find the optimal matching using the Hungarian Algorithm
-        # https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.optimize.linear_sum_assignment.html
-        row_ind, col_ind = linear_sum_assignment(matrix)
-        # Check if this is a valid set, if not, continue to the next 10 perm.
-        if any(matrix[row_ind, col_ind] == 2):
-            continue
-        game_dict = {"tank": [], "support": [], "assassin": [], "offlane": []}
-        for i, player in enumerate(perm):
-            role = convert_int_to_role(col_ind[i])
-            game_dict[role].append(Player(player, role))
-        valid_games.append(game_dict)
+        valid_game = find_valid_game_for_permutation(perm)
+        if valid_game is not None:
+            valid_games.append(valid_game)
 
     return valid_games
 
@@ -210,7 +226,9 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict
     best_game = None
     best_quality = 10000
     for game in valid_games:
-        # Find every permutation of team comp, in which a valid team has 5 players: One tank, One Support, Two Assassins, and One Offlane.
+        # Find every permutation of team comp,
+        # in which a valid team has 5 players:
+        # One tank, One Support, Two Assassins, and One Offlane.
         team_combos: List[List[List[Player]]] = get_team_combinations(game)
         logger.info(f"Found {len(team_combos)} configurations of players for this game group")
         # TODO: Should we instead compare match quality within team_combos and then take a random game?
@@ -268,7 +286,7 @@ async def start_game(ctx: ApplicationContext) -> bool:
         raise NotAdminException("You must be an admin to start a game.")
 
 
-async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: int, ctx: ApplicationContext):
+async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: int, ctx: ApplicationContext) -> None:
     """Moves a player from the lobby voice channel to the Team 1 voice channel."""
     if ctx.guild is None:
         raise NoGuildException
@@ -288,7 +306,7 @@ async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: i
         pass
 
 
-async def move_all_team_players_to_lobby(ctx: ApplicationContext):
+async def move_all_team_players_to_lobby(ctx: ApplicationContext) -> None:
     """For the end of a game, moves all players that are in team_1 or team_2 back to the lobby."""
     if ctx.guild is None:
         raise NoGuildException
@@ -310,6 +328,7 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext):
 def end_game(ctx: ApplicationContext, winner: str) -> None:
     """
     If a game is currently running, ends the game and moves all players back to the lobby.
+
     Winner: The team that won the game.
     """
     if ctx.guild is None:
@@ -361,7 +380,11 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
 
 
 def cancel_game(ctx: ApplicationContext) -> None:
-    """If a game is currently running, ends the game and moves all players back to the lobby without reporting winners."""
+    """Cancels a started game.
+
+    If a game is currently running, ends the game and moves all players
+    back to the lobby without reporting winners.
+    """
     if ctx.guild is None:
         raise NoGuildException
     assert type(ctx.user) is Member
