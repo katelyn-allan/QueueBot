@@ -1,28 +1,29 @@
-import time
 import discord
 from discord import ApplicationContext
 import commands.player_stats as player_stats
-from exceptions import *
-from typing import List, Dict, Any
+from typing import List, Dict, Self
 from discord.ext import commands
-from env_load import *
+
+from util.env_load import ASSASSIN_EMOJI, OFFLANE_EMOJI, SUPPORT_EMOJI, TANK_EMOJI
 
 
 class PlayerInfoCog(commands.Cog):
-    def __init__(self, bot):
+    """Tracks commands related to player info and stats."""
+
+    def __init__(self: Self, bot: discord.Bot) -> None:
+        """Initialize this cog with the bot."""
         self.bot: discord.Bot = bot
 
-    def convert_stat_dict_to_str_output(self, stats: Dict[str, float]) -> str:
-        """
-        Converts a player stats dict into a string output for reporting
-        """
+    def convert_stat_dict_to_str_output(self: Self, stats: Dict[str, float]) -> str:
+        """Converts a player stats dict into a string output for reporting."""
         output = ""
         for key, value in stats.items():
             output += f"**{key.replace('_', ' ').capitalize()}:** {value}\n"
         return output
 
     @discord.slash_command(name="stats", description="Get your stats")
-    async def slash_get_stats(self, ctx: ApplicationContext):
+    async def slash_get_stats(self: Self, ctx: ApplicationContext) -> None:
+        """Gets a player's stats and returns it ephemerally."""
         stats: Dict[str, Dict[str, float]] = player_stats.get_player_stats(ctx)
         embed = discord.Embed(
             title="Player Stats",
@@ -53,7 +54,8 @@ class PlayerInfoCog(commands.Cog):
         await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
-    async def slash_setup(self, ctx: ApplicationContext):
+    async def slash_setup(self: Self, ctx: ApplicationContext) -> None:
+        """Sets up a player's main and secondary roles."""
         main_role_view = MainRoleSelectView()
         await ctx.respond(
             "Select your main role. Your main role will always be prioritized for match-making when possible.",
@@ -67,13 +69,15 @@ class PlayerInfoCog(commands.Cog):
             if role.name in ["Tank", "Support", "Assassin", "Offlane"]:
                 main_role = role.name
         await ctx.respond(
-            "Select your secondary roles. These will be used to fill out the rest of the team when your main role is not available.",
+            "Select your secondary roles. These will be used to fill out the rest of the team when your main role is not available.",  # noqa: E501
             view=SecondaryRoleSelectView(main_role=main_role),
             ephemeral=True,
         )
 
 
 class MainRoleSelectView(discord.ui.View):
+    """Configures a view for role selection for a main role."""
+
     @discord.ui.select(
         placeholder="Main Role (Select 1)",
         min_values=1,
@@ -105,9 +109,8 @@ class MainRoleSelectView(discord.ui.View):
             ),
         ],
     )
-    async def main_role_callback(
-        self, select: discord.SelectMenu, interaction: discord.Interaction
-    ):
+    async def main_role_callback(self: Self, select: discord.SelectMenu, interaction: discord.Interaction) -> None:
+        """Configures the callback function on the select window."""
         # Disable this menu so the user cannot submit multiple responses.
         select.disabled = True
 
@@ -130,7 +133,10 @@ class MainRoleSelectView(discord.ui.View):
 
 
 class SecondaryRoleSelectView(discord.ui.View):
-    def __init__(self, main_role: str):
+    """Configures a view for role selection for a secondary role."""
+
+    def __init__(self: Self, main_role: str) -> None:
+        """Initialize this view with the main role."""
         super().__init__()
         self.main_role = main_role
 
@@ -165,9 +171,8 @@ class SecondaryRoleSelectView(discord.ui.View):
             ),
         ],
     )
-    async def secondary_role_callback(
-        self, select: discord.SelectMenu, interaction: discord.Interaction
-    ):
+    async def secondary_role_callback(self: Self, select: discord.SelectMenu, interaction: discord.Interaction) -> None:
+        """Configures the callback function on the select window."""
         # Disable this menu so the user cannot submit multiple responses.
         select.disabled = True
 
@@ -187,8 +192,7 @@ class SecondaryRoleSelectView(discord.ui.View):
         if main_role_fill in role_strings:
             role_strings.remove(main_role_fill)
         roles: List[discord.Role] = [
-            discord.utils.get(interaction.guild.roles, name=role_string)
-            for role_string in role_strings
+            discord.utils.get(interaction.guild.roles, name=role_string) for role_string in role_strings
         ]
         for role in roles:
             await interaction.user.add_roles(role)
@@ -200,5 +204,6 @@ class SecondaryRoleSelectView(discord.ui.View):
         )
 
 
-def setup(bot: commands.Bot):
+def setup(bot: discord.Bot) -> None:
+    """Adds this cog to the bot."""
     bot.add_cog(PlayerInfoCog(bot))

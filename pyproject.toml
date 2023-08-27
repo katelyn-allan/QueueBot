@@ -1,0 +1,87 @@
+[tool.black]
+skip-string-normalization = false
+line-length = 120
+include = '\.pyi?$'
+
+[tool.ruff]
+# List of all rules: https://beta.ruff.rs/docs/rules/
+select = [
+    # Grab-bag rules
+    "D", # Docstrings
+    "E", # Errors
+    "F", # Flake
+    "Q", # Quotes
+    "W", # style warnings
+
+    # Specific rule sets
+    "ANN",    # Annotations
+    "ASYNC",  # Async
+    "C90",    # McCabe Complexity
+    "FIX",    # Allows TODO statements
+    "ICN",    # Requires packages to use standard names (i.e. pandas as pd)
+    "ISC",    # String concatination
+    "PGH",    # Regex
+    "PLC",    # Py-lint
+    "PLE",    # Py-lint (errors)
+    "PYI",    # Type stubs
+    "RSE",    # Fixes parens on except statements
+    "RUF100", # Respect # noqa statements
+    "RUF200", # Use this pyproject.toml :)
+    "T20",    # Cleans up print statements
+    "TCH",    # Fixes certain imports used only for typing
+    "TID",    # Import aliasing
+    "YTT",    # sys.version checks
+]
+
+ignore = [
+    "ANN401", # no 'Any' type
+    # Docstring formatting issues 
+    "D203",
+    "D212",
+    "D407",
+    "D104",   # Mandates file level docstrings for packages
+    "D100",   # Mandates file level docstrings for modules
+    "D401",   # 'Imperative Mood', very annoying
+    "FIX002", # Allows TODO statements
+]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+per-file-ignores = {}
+
+line-length = 120 # Set to the same as Black for consistency
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.11
+target-version = "py311"
+
+[tool.ruff.pydocstyle]
+convention = "google"

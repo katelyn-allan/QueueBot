@@ -1,18 +1,30 @@
 import discord
 from discord import ApplicationContext
 import commands.queue as queue
-from exceptions import *
-from typing import List, Dict, Any
+from typing import List, Any, Self
 from discord.ext import commands
-from env_load import *
+
+from util.env_load import ADMIN_ID, ASSASSIN_EMOJI, OFFLANE_EMOJI, QUEUED_ID, SUPPORT_EMOJI, TANK_EMOJI
+from util.exceptions import AlreadyInQueueException, NoMainRoleException, PlayerNotFoundException
 
 
 class QueueCog(commands.Cog):
-    def __init__(self, bot):
+    """Commands for interacting with the Queue."""
+
+    def __init__(self: Self, bot: discord.Bot) -> None:
+        """Initialize this cog with the bot."""
         self.bot: discord.Bot = bot
 
+    def convert_list_to_string(self: Self, input_list: List[Any]) -> str:
+        """Converts a list to a long-form string."""
+        return_str = ""
+        for item in input_list:
+            return_str += f"{item}\n"
+        return return_str
+
     @discord.slash_command(name="join", description="Join the queue for a game")
-    async def slash_join_queue(self, ctx: ApplicationContext):
+    async def slash_join_queue(self: Self, ctx: ApplicationContext) -> None:
+        """Joins the queue."""
         try:
             user_id, queue_length = queue.join_queue(ctx)
             queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -31,26 +43,21 @@ class QueueCog(commands.Cog):
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),
-                description=f"<@{e.user.id}>, you do not have a main role set! Please setup using the `/setup` command and then try again.",
+                description=f"<@{e.user.id}>, you do not have a main role set! Please setup using the `/setup` command and then try again.",  # noqa: E501
             )
             await ctx.respond(embed=embed, ephemeral=True)
             return
         embed = discord.Embed(
             title="Queue",
             color=discord.Colour.blurple(),
-            description=f"<@{user_id}> has joined the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+            description=f"<@{user_id}> has joined the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
         await queue.update_queue_channel(ctx, queue_length)
 
-    def convert_list_to_string(self, l: List[Any]) -> str:
-        return_str = ""
-        for item in l:
-            return_str += f"{item}\n"
-        return return_str
-
     @discord.slash_command(name="list", description="List the players in the queue")
-    async def slash_list_queue(self, ctx: ApplicationContext):
+    async def slash_list_queue(self: Self, ctx: ApplicationContext) -> None:
+        """Lists the queue in a stylized format."""
         queue_info = queue.get_queue_data(ctx)
         thumbnail = discord.File("images/hotslogo.png", filename="hotslogo.png")
         embed = discord.Embed(
@@ -106,7 +113,8 @@ class QueueCog(commands.Cog):
         await ctx.respond(file=thumbnail, embed=embed)
 
     @discord.slash_command(name="leave", description="Leave the queue for a game")
-    async def slash_leave_queue(self, ctx: ApplicationContext):
+    async def slash_leave_queue(self: Self, ctx: ApplicationContext) -> None:
+        """Leaves the queue."""
         try:
             user_id, queue_length = queue.leave_queue(ctx)
             queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -124,17 +132,15 @@ class QueueCog(commands.Cog):
         embed = discord.Embed(
             title="Queue",
             color=discord.Colour.blurple(),
-            description=f"<@{user_id}> has left the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+            description=f"<@{user_id}> has left the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
         )
         await ctx.respond(embed=embed)
         await queue.update_queue_channel(ctx, queue_length)
 
     @discord.slash_command(name="clear", description="Clear the queue")
-    async def slash_clear_queue(self, ctx: ApplicationContext):
-        if (
-            ADMIN_ID in [role.id for role in ctx.user.roles]
-            or ctx.user.guild_permissions.administrator
-        ):
+    async def slash_clear_queue(self: Self, ctx: ApplicationContext) -> None:
+        """Clears the queue. Admin command."""
+        if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             queue.clear_queue()
             queued_role = ctx.guild.get_role(QUEUED_ID)
             for member in ctx.guild.members:
@@ -143,7 +149,7 @@ class QueueCog(commands.Cog):
             embed = discord.Embed(
                 title="Queue",
                 color=discord.Colour.blurple(),
-                description=f"Queue cleared!",
+                description="Queue cleared!",
             )
             await ctx.respond(embed=embed)
             await queue.update_queue_channel(ctx, 0)
@@ -156,11 +162,9 @@ class QueueCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="remove", description="Remove a player from the queue")
-    async def slash_remove_player(self, ctx: ApplicationContext, user: discord.Member):
-        if (
-            ADMIN_ID in [role.id for role in ctx.user.roles]
-            or ctx.user.guild_permissions.administrator
-        ):
+    async def slash_remove_player(self: Self, ctx: ApplicationContext, user: discord.Member) -> None:
+        """Removes a player from the queue. Admin command."""
+        if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             try:
                 user_id, queue_length = queue.remove_from_queue(user)
                 # Remove the queued role from the user
@@ -179,7 +183,7 @@ class QueueCog(commands.Cog):
             embed = discord.Embed(
                 title="Queue",
                 color=discord.Colour.blurple(),
-                description=f"<@{user_id}> has been removed from the queue! There {plural_2} now {queue_length} player{plural} in the queue.",
+                description=f"<@{user_id}> has been removed from the queue! There {plural_2} now {queue_length} player{plural} in the queue.",  # noqa: E501
             )
             await ctx.respond(embed=embed)
             await queue.update_queue_channel(ctx, queue_length)
@@ -192,17 +196,15 @@ class QueueCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
     @discord.slash_command(name="initialize", description="Initialize the bot")
-    async def slash_initialize(self, ctx: ApplicationContext):
-        if (
-            ADMIN_ID in [role.id for role in ctx.user.roles]
-            or ctx.user.guild_permissions.administrator
-        ):
+    async def slash_initialize(self: Self, ctx: ApplicationContext) -> None:
+        """Initialize the bot and populate the queue."""
+        if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             queue_len = queue.populate_queue(ctx)
             await queue.update_queue_channel(ctx, queue_len)
             embed = discord.Embed(
                 title="Queue",
                 color=discord.Colour.blurple(),
-                description=f"Bot initialized and queue populated.",
+                description="Bot initialized and queue populated.",
             )
             await ctx.respond(embed=embed, ephemeral=True)
         else:
@@ -214,5 +216,6 @@ class QueueCog(commands.Cog):
             await ctx.respond(embed=embed, ephemeral=True)
 
 
-def setup(bot: commands.Bot):
+def setup(bot: discord.Bot) -> None:
+    """Adds this cog to the bot."""
     bot.add_cog(QueueCog(bot))
