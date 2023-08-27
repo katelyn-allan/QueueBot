@@ -9,7 +9,7 @@ class NotEnoughPlayersException(Exception):
     pass
 
 
-class GameIsInProgressException(Exception):
+class GameInProgressException(Exception):
     """Exception that is called when a game is already in progress."""
 
     pass
@@ -33,12 +33,6 @@ class PlayerNotFoundException(Exception):
 
 class NoValidGameException(Exception):
     """Exception that is called when there is no valid game able to be created."""
-
-    pass
-
-
-class GameInProgressException(Exception):
-    """Exception that is called when a game is already in progress."""
 
     pass
 
