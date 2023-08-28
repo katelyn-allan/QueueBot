@@ -1,5 +1,5 @@
 import discord
-from discord import ApplicationContext, option
+from discord import ApplicationContext, option, Forbidden, HTTPException
 import commands.game as game
 from typing import Dict, Self
 from discord.ext import commands
@@ -119,10 +119,10 @@ class GameCog(commands.Cog):
             )
             await ctx.respond(embed=embed)
 
-            # Move everyone back to the lobby.
             try:
                 await game.move_all_team_players_to_lobby(ctx)
-            except Exception:  # TODO: Make non-generic
+            except Forbidden | HTTPException as e:
+                logger.error(e)
                 pass
         except NoGameInProgressException:
             embed = discord.Embed(
@@ -155,7 +155,7 @@ class GameCog(commands.Cog):
 
             try:
                 await game.move_all_team_players_to_lobby(ctx)
-            except Exception as e:  # TODO: Make non-generic
+            except Forbidden | HTTPException as e:
                 logger.error(e)
                 pass
         except NoGameInProgressException:

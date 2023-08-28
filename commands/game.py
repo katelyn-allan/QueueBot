@@ -1,5 +1,5 @@
 import trueskill
-from discord import ApplicationContext, Member
+from discord import ApplicationContext, Member, Forbidden, HTTPException
 from commands.queue import Queue
 from commands.player_stats import (
     PlayerData,
@@ -297,7 +297,8 @@ async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: i
         raise ChannelNotFoundException(f"Team {team_number} Voice Channel", channel_id)
     try:
         await disc_user.move_to(team_voice_channel)
-    except Exception:
+    except Forbidden | HTTPException as e:
+        logger.error(e)
         pass
 
 
