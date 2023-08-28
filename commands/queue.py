@@ -1,4 +1,4 @@
-from discord import ApplicationContext, Member, Guild
+from discord import Member, Guild
 from typing import List, Dict, Self, Tuple, Type
 from dotenv import load_dotenv
 from util.env_load import (
@@ -15,7 +15,6 @@ from util.env_load import (
 
 from util.exceptions import (
     AlreadyInQueueException,
-    ChannelNotFoundException,
     NoGuildException,
     NoMainRoleException,
     PlayerNotFoundException,
