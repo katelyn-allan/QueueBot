@@ -103,16 +103,8 @@ class Queue:
 
         return ctx.user.id, len(self.queue)
 
-    def leave_queue(self: Self, ctx: ApplicationContext) -> Tuple[int, int]:
-        """Facilitates leaving the queue, returns the user's id and the number of people in the queue."""
-        if ctx.user not in self.queue:
-            raise PlayerNotFoundException(ctx.user)
-        self.queue.remove(ctx.user)
-
-        return ctx.user.id, len(self.queue)
-
     def remove_from_queue(self: Self, user: Member) -> Tuple[int, int]:
-        """Removes a player from the queue."""
+        """Removes a player from the queue, returns the user's id and the number of people in the queue."""
         if user not in self.queue:
             raise PlayerNotFoundException(user)
         self.queue.remove(user)
@@ -131,4 +123,3 @@ def populate_queue(guild: Guild) -> int:
     len_queue = len(Queue().queue)
     logger.info(f"Queue initialized with {len_queue}")
     return len_queue
-

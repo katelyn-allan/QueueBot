@@ -110,7 +110,7 @@ class QueueCog(commands.Cog):
     async def slash_leave_queue(self: Self, ctx: ApplicationContext) -> None:
         """Leaves the queue."""
         try:
-            user_id, queue_length = Queue().leave_queue(ctx)
+            user_id, queue_length = Queue().remove_from_queue(ctx.user)
             queued_role = ctx.guild.get_role(QUEUED_ID)
             await ctx.user.remove_roles(queued_role)
             plural = "s" if queue_length != 1 else ""
