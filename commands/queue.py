@@ -84,24 +84,24 @@ class Queue:
 
         return queue_data
 
-    def join_queue(self: Self, ctx: ApplicationContext) -> Tuple[int, int]:
+    def join_queue(self: Self, user: Member) -> Tuple[int, int]:
         """Facilitates joining the queue, returns the user's id and the number of people in the queue."""
-        assert type(ctx.user) is Member
-        if ctx.user in self.queue:
-            raise AlreadyInQueueException(ctx.user)
+        assert type(user) is Member
+        if user in self.queue:
+            raise AlreadyInQueueException(user)
         # Raise an error if the user does not have a main role set
-        user_roles = [role.id for role in ctx.user.roles]
+        user_roles = [role.id for role in user.roles]
         if (
             TANK_ID not in user_roles
             and SUPPORT_ID not in user_roles
             and ASSASSIN_ID not in user_roles
             and OFFLANE_ID not in user_roles
         ):
-            raise NoMainRoleException(ctx.user)
-        self.queue.append(ctx.user)
+            raise NoMainRoleException(user)
+        self.queue.append(user)
         # Assign the user the queued role
 
-        return ctx.user.id, len(self.queue)
+        return user.id, len(self.queue)
 
     def remove_from_queue(self: Self, user: Member) -> Tuple[int, int]:
         """Removes a player from the queue, returns the user's id and the number of people in the queue."""

@@ -21,7 +21,7 @@ class QueueCog(commands.Cog):
     async def slash_join_queue(self: Self, ctx: ApplicationContext) -> None:
         """Joins the queue."""
         try:
-            user_id, queue_length = Queue().join_queue(ctx)
+            user_id, queue_length = Queue().join_queue(ctx.user)
             queued_role = ctx.guild.get_role(QUEUED_ID)
             await ctx.user.add_roles(queued_role)
             plural = "s" if queue_length != 1 else ""
