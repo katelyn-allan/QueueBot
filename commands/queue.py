@@ -98,8 +98,6 @@ class Queue:
         ):
             raise NoMainRoleException(user)
         self.queue.append(user)
-        # Assign the user the queued role
-
         return user.id, len(self.queue)
 
     def remove_from_queue(self: Self, user: Member) -> Tuple[int, int]:
