@@ -83,8 +83,8 @@ class Queue:
 
         return queue_data
 
-    def join_queue(self: Self, user: Member) -> Tuple[int, int]:
-        """Facilitates joining the queue, returns the user's id and the number of people in the queue."""
+    def add(self: Self, user: Member) -> Tuple[int, int]:
+        """Adds a player to the queue, returns the user's id and the number of people in the queue."""
         assert type(user) is Member
         if user in self.queue:
             raise AlreadyInQueueException(user)
@@ -100,7 +100,7 @@ class Queue:
         self.queue.append(user)
         return user.id, len(self.queue)
 
-    def remove_from_queue(self: Self, user: Member) -> Tuple[int, int]:
+    def remove(self: Self, user: Member) -> Tuple[int, int]:
         """Removes a player from the queue, returns the user's id and the number of people in the queue."""
         if user not in self.queue:
             raise PlayerNotFoundException(user)
