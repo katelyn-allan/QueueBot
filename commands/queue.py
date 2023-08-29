@@ -98,13 +98,17 @@ class Queue:
         ):
             raise NoMainRoleException(user)
         self.queue.append(user)
+    
         return user.id, len(self.queue)
+   
 
     def remove(self: Self, user: Member) -> Tuple[int, int]:
         """Removes a player from the queue, returns the user's id and the number of people in the queue."""
         if user not in self.queue:
             raise PlayerNotFoundException(user)
         self.queue.remove(user)
+        logger.info(f"{user} was removed from the queue")
+        logger.info(f"There are now {len(self.queue)} players in the queue")
 
         return user.id, len(self.queue)
 

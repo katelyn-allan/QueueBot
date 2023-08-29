@@ -2,7 +2,8 @@ import discord
 import os
 from dotenv import load_dotenv
 import logging
-import commands.queue as queue
+from commands.queue import populate_queue
+from util.env_load import GENERAL_CHANNEL_ID
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,18 @@ async def on_ready() -> None:
     """
     logger.info(f"{bot.user} has connected to Discord!")
     for guild in bot.guilds:
-        queue.populate_queue(guild)
+        queue_length = populate_queue(guild)
+        try:
+            general = guild.get_channel(GENERAL_CHANNEL_ID)
+            embed = discord.Embed(
+                title="Startup",
+                color=discord.Colour.blurple(),
+                description=f"I'm awake! Queue is now open and initialized with {queue_length} players.",
+            )
+            await general.send(embed=embed)
+        except discord.errors.NotFound:
+            logger.error(f"Could not find channel {GENERAL_CHANNEL_ID} for guild [{guild.id}]:{guild.name}")
+            continue
 
 
 if __name__ == "__main__":
