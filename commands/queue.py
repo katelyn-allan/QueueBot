@@ -99,7 +99,8 @@ class Queue:
         ):
             raise NoMainRoleException(ctx.user)
         self.queue.append(ctx.user)
-        # Assign the user the queued role
+        logger.info(f"{ctx.user} joined the queue")
+        logger.info(f"There are now {len(self.queue)} players in the queue")
 
         return ctx.user.id, len(self.queue)
 
@@ -108,6 +109,8 @@ class Queue:
         if ctx.user not in self.queue:
             raise PlayerNotFoundException(ctx.user)
         self.queue.remove(ctx.user)
+        logger.info(f"{ctx.user} left the queue")
+        logger.info(f"There are now {len(self.queue)} players in the queue")
 
         return ctx.user.id, len(self.queue)
 
@@ -116,6 +119,8 @@ class Queue:
         if user not in self.queue:
             raise PlayerNotFoundException(user)
         self.queue.remove(user)
+        logger.info(f"{user} was removed from the queue")
+        logger.info(f"There are now {len(self.queue)} players in the queue")
 
         return user.id, len(self.queue)
 
@@ -131,4 +136,3 @@ def populate_queue(guild: Guild) -> int:
     len_queue = len(Queue().queue)
     logger.info(f"Queue initialized with {len_queue}")
     return len_queue
-
