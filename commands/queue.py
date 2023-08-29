@@ -15,7 +15,6 @@ from util.env_load import (
 
 from util.exceptions import (
     AlreadyInQueueException,
-    ChannelNotFoundException,
     NoGuildException,
     NoMainRoleException,
     PlayerNotFoundException,

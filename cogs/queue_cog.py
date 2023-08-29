@@ -2,7 +2,7 @@ import discord
 from discord import ApplicationContext
 
 from commands.queue import Queue
-from typing import List, Any, Self
+from typing import Self
 
 from discord.ext import commands
 
