@@ -21,7 +21,7 @@ class QueueCog(commands.Cog):
     async def slash_join_queue(self: Self, ctx: ApplicationContext) -> None:
         """Joins the queue."""
         try:
-            user_id, queue_length = Queue().join_queue(ctx)
+            user_id, queue_length = Queue().add(ctx.user)
             queued_role = ctx.guild.get_role(QUEUED_ID)
             await ctx.user.add_roles(queued_role)
             plural = "s" if queue_length != 1 else ""
@@ -110,7 +110,7 @@ class QueueCog(commands.Cog):
     async def slash_leave_queue(self: Self, ctx: ApplicationContext) -> None:
         """Leaves the queue."""
         try:
-            user_id, queue_length = Queue().leave_queue(ctx)
+            user_id, queue_length = Queue().remove(ctx.user)
             queued_role = ctx.guild.get_role(QUEUED_ID)
             await ctx.user.remove_roles(queued_role)
             plural = "s" if queue_length != 1 else ""
@@ -158,7 +158,7 @@ class QueueCog(commands.Cog):
         """Removes a player from the queue. Admin command."""
         if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             try:
-                user_id, queue_length = Queue().remove_from_queue(user)
+                user_id, queue_length = Queue().remove(user)
                 # Remove the queued role from the user
                 queued_role = ctx.guild.get_role(QUEUED_ID)
                 await user.remove_roles(queued_role)

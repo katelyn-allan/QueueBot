@@ -1,4 +1,4 @@
-from discord import ApplicationContext, Member, Guild
+from discord import Member, Guild
 from typing import List, Dict, Self, Tuple, Type
 from dotenv import load_dotenv
 from util.env_load import (
@@ -83,38 +83,27 @@ class Queue:
 
         return queue_data
 
-    def join_queue(self: Self, ctx: ApplicationContext) -> Tuple[int, int]:
-        """Facilitates joining the queue, returns the user's id and the number of people in the queue."""
-        assert type(ctx.user) is Member
-        if ctx.user in self.queue:
-            raise AlreadyInQueueException(ctx.user)
+    def add(self: Self, user: Member) -> Tuple[int, int]:
+        """Adds a player to the queue, returns the user's id and the number of people in the queue."""
+        assert type(user) is Member
+        if user in self.queue:
+            raise AlreadyInQueueException(user)
         # Raise an error if the user does not have a main role set
-        user_roles = [role.id for role in ctx.user.roles]
+        user_roles = [role.id for role in user.roles]
         if (
             TANK_ID not in user_roles
             and SUPPORT_ID not in user_roles
             and ASSASSIN_ID not in user_roles
             and OFFLANE_ID not in user_roles
         ):
-            raise NoMainRoleException(ctx.user)
-        self.queue.append(ctx.user)
-        logger.info(f"{ctx.user} joined the queue")
-        logger.info(f"There are now {len(self.queue)} players in the queue")
+            raise NoMainRoleException(user)
+        self.queue.append(user)
+    
+        return user.id, len(self.queue)
+   
 
-        return ctx.user.id, len(self.queue)
-
-    def leave_queue(self: Self, ctx: ApplicationContext) -> Tuple[int, int]:
-        """Facilitates leaving the queue, returns the user's id and the number of people in the queue."""
-        if ctx.user not in self.queue:
-            raise PlayerNotFoundException(ctx.user)
-        self.queue.remove(ctx.user)
-        logger.info(f"{ctx.user} left the queue")
-        logger.info(f"There are now {len(self.queue)} players in the queue")
-
-        return ctx.user.id, len(self.queue)
-
-    def remove_from_queue(self: Self, user: Member) -> Tuple[int, int]:
-        """Removes a player from the queue."""
+    def remove(self: Self, user: Member) -> Tuple[int, int]:
+        """Removes a player from the queue, returns the user's id and the number of people in the queue."""
         if user not in self.queue:
             raise PlayerNotFoundException(user)
         self.queue.remove(user)
