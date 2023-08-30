@@ -57,7 +57,7 @@ class QueueCog(commands.Cog):
         embed = discord.Embed(
             title="Queue",
             color=discord.Colour.blurple(),
-            description=f"Players in Queue: {len(Queue.queue)}",
+            description=f"Players in Queue: {len(Queue().queue)}",
         )
         embed.add_field(
             name=f"Tanks {TANK_EMOJI}",
