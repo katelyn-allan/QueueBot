@@ -1,6 +1,6 @@
 import trueskill
 import json
-from typing import Any, Dict, List, Self, Type
+from typing import Any, Dict, List, Self, Type, ClassVar
 from discord import ApplicationContext, Member
 
 
@@ -48,6 +48,35 @@ class RoleStat:
 class PlayerStats:
     """Container class for player stats across multiple roles."""
 
+    player_data: ClassVar[Dict[str, Self]] = {}
+
+    @classmethod
+    def load_player_data(cls: Type["PlayerStats"]) -> None:
+        """Loads player_data.json into memory for manipulation."""
+        with open("player_data.json", "r") as f:
+            dict_load = json.load(f)
+            for key, value in dict_load.items():
+                dict_load[key] = cls(value)
+            cls.player_data = dict_load
+
+    @classmethod
+    def update_player_data(cls: Type["PlayerStats"]) -> None:
+        """Updates player_data.json with the current data in memory."""
+        data_copy = cls.player_data.copy()
+        for key, value in data_copy.items():
+            data_copy[key] = value.convert_to_dict()
+        with open("player_data.json", "w") as f:
+            json.dump(data_copy, f)
+        cls.load_player_data()
+
+    @classmethod
+    def instantiate_new_players(cls: Type["PlayerStats"], users: List[Member]) -> None:
+        """Instantiates new players in the player_data dict."""
+        for user in users:
+            if user.id not in cls.player_data:
+                cls.player_data[str(user.id)] = PlayerStats()
+        cls.update_player_data()
+
     def __init__(self: Self, init_dict: Dict[str, Any] | None = None) -> None:
         """Initializes the PlayerStats class."""
         if init_dict:
@@ -71,57 +100,11 @@ class PlayerStats:
         return outp
 
 
-class PlayerData:
-    """Singleton class holding player data."""
-
-    def __new__(cls: Type["PlayerData"]) -> "PlayerData":
-        """Creates a singleton instance of the PlayerData class."""
-        if not hasattr(cls, "instance"):
-            cls.instance = super(PlayerData, cls).__new__(cls)
-        return cls.instance
-
-    def __init__(self: Self) -> None:
-        """Initializes the player_data dict from the json file."""
-        if not hasattr(self, "player_data"):
-            self.player_data: Dict[str, PlayerStats] = self.load_player_data()
-
-    def load_player_data(self: Self) -> Dict[str, PlayerStats]:
-        """Loads player_data.json into memory for manipulation."""
-        with open("player_data.json", "r") as f:
-            dict_load = json.load(f)
-            for key, value in dict_load.items():
-                dict_load[key] = PlayerStats(value)
-            return dict_load
-
-    def reload_palyer_data(self: Self) -> None:
-        """Reloads player data."""
-        self.player_data: Dict[str, PlayerStats] = self.load_player_data()
-
-    def update_player_data(self: Self) -> None:
-        """Updates player_data.json with the current data in memory."""
-        data_copy = self.player_data.copy()
-        for key, value in data_copy.items():
-            data_copy[key] = value.convert_to_dict()
-        with open("player_data.json", "w") as f:
-            json.dump(data_copy, f)
-        self.reload_palyer_data()
-
-    def instantiate_new_players(self: Self, users: List[Member]) -> None:
-        """Instantiates new players in the player_data dict."""
-        for user in users:
-            if user.id not in self.player_data:
-                self.player_data[str(user.id)] = PlayerStats()
-        self.update_player_data()
-
-
-PlayerData()
-
-
 def get_player_stats(ctx: ApplicationContext) -> Dict[str, Dict[str, float]]:
     """Returns the player's stats."""
-    if str(ctx.user.id) not in PlayerData().player_data:
-        PlayerData().instantiate_new_players([ctx.user])
-    user_data = PlayerData().player_data[str(ctx.user.id)]
+    if str(ctx.user.id) not in PlayerStats.player_data:
+        PlayerStats.instantiate_new_players([ctx.user])
+    user_data = PlayerStats.player_data[str(ctx.user.id)]
     returned_stats = {}
     returned_stats["tank"] = user_data.tank.get_stats()
     returned_stats["support"] = user_data.support.get_stats()

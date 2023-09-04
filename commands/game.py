@@ -2,7 +2,7 @@ import trueskill
 from discord import ApplicationContext, Member
 from commands.queue import Queue
 from commands.player_stats import (
-    PlayerData,
+    PlayerStats,
     RoleStat,
 )
 from typing import List, Dict, Optional, Self, Type
@@ -51,11 +51,11 @@ class Player:
         """
         self.user = user
         self.role = role
-        self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
+        self.rating = getattr(PlayerStats.player_data[str(user.id)], role).rating
 
     def report_player_data(self: Self, win: bool) -> None:
         """Updates the player's rating in the PLAYER_DATA dictionary."""
-        player_data_obj: RoleStat = getattr(PlayerData().player_data[str(self.user.id)], self.role)
+        player_data_obj: RoleStat = getattr(PlayerStats.player_data[str(self.user.id)], self.role)
         logger.info(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")
         player_data_obj.rating = self.rating
         player_data_obj.games_played += 1
@@ -231,7 +231,7 @@ def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, Li
 def find_valid_games() -> List[Dict[str, List[Player]]]:
     """Finds all valid games of 10 players from the queue."""
     players_in_queue: List[Member] = Queue().queue.copy()
-    PlayerData().instantiate_new_players(players_in_queue)
+    PlayerStats.instantiate_new_players(players_in_queue)
     player_set = set(players_in_queue)
     combinations_of_players: List[List[Member]] = [list(comb) for comb in itertools.combinations(player_set, 10)]
     valid_games = []
@@ -409,7 +409,7 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
 
         # Update the saved data to match the data in memory
         logger.info("Running update_player_data()...")
-        PlayerData().update_player_data()
+        PlayerStats.update_player_data()
         logger.info("Player data updated!")
 
         # Reset the current game.

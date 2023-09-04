@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import logging
 from commands.queue import populate_queue
 from util.env_load import GENERAL_CHANNEL_ID
+from commands.player_stats import PlayerStats
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,9 @@ async def on_ready() -> None:
     Repopulates queue and updates the according channel.
     """
     logger.info(f"{bot.user} has connected to Discord!")
+
+    PlayerStats.load_player_data()
+
     for guild in bot.guilds:
         queue_length = populate_queue(guild)
         try:
