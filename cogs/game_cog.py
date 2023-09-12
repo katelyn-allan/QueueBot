@@ -36,6 +36,7 @@ class GameCog(commands.Cog):
     @discord.slash_command(name="start", description="Start a game")
     async def slash_start_game(self: Self, ctx: ApplicationContext) -> None:
         """Starts a game."""
+        await ctx.defer()
         try:
             current_game = await game.start_game(ctx)
             if current_game:
@@ -102,6 +103,7 @@ class GameCog(commands.Cog):
     )
     async def slash_end_game(self: Self, ctx: ApplicationContext, winner: str) -> None:
         """Ends a game, reporting a winner."""
+        await ctx.defer()
         try:
             game.end_game(ctx, winner)
 
@@ -134,6 +136,7 @@ class GameCog(commands.Cog):
     @discord.slash_command(name="cancel", description="Cancel a currently running game")
     async def slash_cancel_game(self: Self, ctx: ApplicationContext) -> None:
         """Cancels a started game with no winner reported."""
+        await ctx.defer()
         try:
             game.cancel_game(ctx)
             try:

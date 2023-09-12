@@ -20,6 +20,7 @@ class QueueCog(commands.Cog):
     @discord.slash_command(name="join", description="Join the queue for a game")
     async def slash_join_queue(self: Self, ctx: ApplicationContext) -> None:
         """Joins the queue."""
+        await ctx.defer()
         try:
             user_id, queue_length = Queue().add(ctx.user)
             queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -52,6 +53,7 @@ class QueueCog(commands.Cog):
     @discord.slash_command(name="list", description="List the players in the queue")
     async def slash_list_queue(self: Self, ctx: ApplicationContext) -> None:
         """Lists the queue in a stylized format."""
+        await ctx.defer()
         queue_info = Queue().as_dict()
         thumbnail = discord.File("images/hotslogo.png", filename="hotslogo.png")
         embed = discord.Embed(
@@ -109,6 +111,7 @@ class QueueCog(commands.Cog):
     @discord.slash_command(name="leave", description="Leave the queue for a game")
     async def slash_leave_queue(self: Self, ctx: ApplicationContext) -> None:
         """Leaves the queue."""
+        await ctx.defer()
         try:
             user_id, queue_length = Queue().remove(ctx.user)
             queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -133,6 +136,7 @@ class QueueCog(commands.Cog):
     @discord.slash_command(name="clear", description="Clear the queue")
     async def slash_clear_queue(self: Self, ctx: ApplicationContext) -> None:
         """Clears the queue. Admin command."""
+        await ctx.defer()
         if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             Queue().queue.clear()
             queued_role = ctx.guild.get_role(QUEUED_ID)
@@ -156,6 +160,7 @@ class QueueCog(commands.Cog):
     @discord.slash_command(name="remove", description="Remove a player from the queue")
     async def slash_remove_player(self: Self, ctx: ApplicationContext, user: discord.Member) -> None:
         """Removes a player from the queue. Admin command."""
+        await ctx.defer()
         if ADMIN_ID in [role.id for role in ctx.user.roles] or ctx.user.guild_permissions.administrator:
             try:
                 user_id, queue_length = Queue().remove(user)

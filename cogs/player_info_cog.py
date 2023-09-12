@@ -24,6 +24,7 @@ class PlayerInfoCog(commands.Cog):
     @discord.slash_command(name="stats", description="Get your stats")
     async def slash_get_stats(self: Self, ctx: ApplicationContext) -> None:
         """Gets a player's stats and returns it ephemerally."""
+        await ctx.defer()
         stats: Dict[str, Dict[str, float]] = player_stats.get_player_stats(ctx)
         embed = discord.Embed(
             title="Player Stats",
@@ -56,6 +57,7 @@ class PlayerInfoCog(commands.Cog):
     @discord.slash_command(name="setup", description="Get set up with the Queue Bot!")
     async def slash_setup(self: Self, ctx: ApplicationContext) -> None:
         """Sets up a player's main and secondary roles."""
+        await ctx.defer()
         main_role_view = MainRoleSelectView()
         await ctx.respond(
             "Select your main role. Your main role will always be prioritized for match-making when possible.",
