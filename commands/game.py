@@ -276,10 +276,6 @@ async def start_game(ctx: ApplicationContext) -> bool:
             raise NoValidGameException("Not enough players on each role to make a valid game.")
         best_game = find_best_game(valid_games)
         CurrentGame().assign_game(best_game["team1"], best_game["team2"])
-        for player in best_game["team1"].values():
-            await move_player_from_lobby_to_team_voice(player.user, 1, ctx)
-        for player in best_game["team2"].values():
-            await move_player_from_lobby_to_team_voice(player.user, 2, ctx)
         return True
     else:
         raise NotAdminException("You must be an admin to start a game.")

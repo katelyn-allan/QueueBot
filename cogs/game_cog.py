@@ -72,6 +72,11 @@ class GameCog(commands.Cog):
             )
             embed.set_image(url=banner)
             await ctx.respond(embed=embed)
+            # Move players after the embed is sent.
+            for player in team1.values():
+                await game.move_player_from_lobby_to_team_voice(player.user, 1, ctx)
+            for player in team2.values():
+                await game.move_player_from_lobby_to_team_voice(player.user, 2, ctx)
         except NotEnoughPlayersException:
             embed = discord.Embed(
                 title="Error",
@@ -107,17 +112,18 @@ class GameCog(commands.Cog):
         try:
             game.end_game(ctx, winner)
 
-            # Move everyone back to the lobby.
-            try:
-                await game.move_all_team_players_to_lobby(ctx)
-            except Exception:  # TODO: Make non-generic
-                pass
             embed = discord.Embed(
                 title="Game Ended",
                 color=discord.Colour.blurple(),
                 description=f"Game ended by {ctx.user.mention}! Team {winner} are the winners!",
             )
             await ctx.respond(embed=embed)
+
+            # Move everyone back to the lobby.
+            try:
+                await game.move_all_team_players_to_lobby(ctx)
+            except Exception:  # TODO: Make non-generic
+                pass
         except NoGameInProgressException:
             embed = discord.Embed(
                 title="Error",
@@ -139,17 +145,19 @@ class GameCog(commands.Cog):
         await ctx.defer()
         try:
             game.cancel_game(ctx)
-            try:
-                await game.move_all_team_players_to_lobby(ctx)
-            except Exception as e:  # TODO: Make non-generic
-                logger.error(e)
-                pass
+
             embed = discord.Embed(
                 title="Game Cancelled",
                 color=discord.Colour.blurple(),
                 description=f"Game cancelled by {ctx.user.mention}!",
             )
             await ctx.respond(embed=embed)
+
+            try:
+                await game.move_all_team_players_to_lobby(ctx)
+            except Exception as e:  # TODO: Make non-generic
+                logger.error(e)
+                pass
         except NoGameInProgressException:
             embed = discord.Embed(
                 title="Error",

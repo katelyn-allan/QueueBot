@@ -98,9 +98,8 @@ class Queue:
         ):
             raise NoMainRoleException(user)
         self.queue.append(user)
-    
+
         return user.id, len(self.queue)
-   
 
     def remove(self: Self, user: Member) -> Tuple[int, int]:
         """Removes a player from the queue, returns the user's id and the number of people in the queue."""
