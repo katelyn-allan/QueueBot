@@ -21,6 +21,7 @@ from util.exceptions import (
     NotAdminException,
 )
 import logging
+import discord
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,50 @@ class CurrentGame:
         self.map = None
         self.first_pick = None
         self.in_progress = False
+
+    def reroll_map(self: Self) -> None:
+        """Reroll the map for the current game."""
+        if self.in_progress:
+            valid_maps_copy = self.valid_maps.copy()
+            valid_maps_copy.remove(self.map)
+            self.map = random.choice(valid_maps_copy)
+        else:
+            raise NoGameInProgressException("No game is currently in progress.")
+
+    def convert_team_to_string(self: Self, team: Dict[str, Player]) -> str:
+        """Helper function to convert a provided team dictionary to a string representation.
+
+        TODO: Convert team to a class structure and add a __str__ method for this.
+        """
+        return_str = ""
+        for role in ["tank", "support", "assassin", "assassin2", "offlane"]:
+            return_str += f"<@{team[role].user.id}>\n\n"
+        return return_str
+
+    def create_embed(self: Self) -> discord.Embed:
+        """Creates a discord embed object representing the game."""
+        banner = f"https://static.icy-veins.com/images/heroes/tier-lists/maps/{self.map.replace(' ', '-').lower()}.jpg"
+        embed = discord.Embed(
+            title="**Game Started**",
+            color=discord.Colour.blurple(),
+            description=map,
+        )
+        embed.add_field(
+            name="Team 1" + (" (First Pick)" if self.first_pick == 1 else ""),
+            value=self.convert_team_to_string(self.team_1),
+            inline=True,
+        )
+        embed.add_field(
+            name="VS.",
+            value="TANK\n\nSUPPORT\n\nASSASSIN\n\nASSASSIN\n\nOFFLANE",
+        )
+        embed.add_field(
+            name="Team 2" + (" (First Pick)" if self.first_pick == 2 else ""),
+            value=self.convert_team_to_string(self.team_2),
+            inline=True,
+        )
+        embed.set_image(url=banner)
+        return embed
 
 
 def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, List[Player]]]:
