@@ -1,7 +1,7 @@
 import discord
 from discord import ApplicationContext, option
 import commands.game as game
-from typing import Dict, Self
+from typing import Self
 from discord.ext import commands
 
 from util.exceptions import (
