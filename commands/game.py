@@ -149,7 +149,7 @@ class CurrentGame:
         embed = discord.Embed(
             title="**Game Started**",
             color=discord.Colour.blurple(),
-            description=map,
+            description=self.map,
         )
         embed.add_field(
             name="Team 1" + (" (First Pick)" if self.first_pick == 1 else ""),
