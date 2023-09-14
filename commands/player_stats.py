@@ -119,7 +119,6 @@ PlayerData()
 
 def get_player_stats(ctx: ApplicationContext) -> Dict[str, Dict[str, float]]:
     """Returns the player's stats."""
-    assert type(ctx.user) is Member
     if str(ctx.user.id) not in PlayerData().player_data:
         PlayerData().instantiate_new_players([ctx.user])
     user_data = PlayerData().player_data[str(ctx.user.id)]
