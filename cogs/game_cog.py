@@ -1,7 +1,7 @@
 import discord
 from discord import ApplicationContext, option
 import commands.game as game
-from typing import Dict, Self
+from typing import Self
 from discord.ext import commands
 
 from util.exceptions import (
@@ -23,61 +23,27 @@ class GameCog(commands.Cog):
         """Initialize this cog with the bot."""
         self.bot: discord.Bot = bot
 
-    def convert_team_to_string(self: Self, team: Dict[str, game.Player]) -> str:
-        """Helper function to convert a provided team dictionary to a string representation.
-
-        TODO: Convert team to a class structure and add a __str__ method for this.
-        """
-        return_str = ""
-        for role in ["tank", "support", "assassin", "assassin2", "offlane"]:
-            return_str += f"<@{team[role].user.id}>\n\n"
-        return return_str
-
     @discord.slash_command(name="start", description="Start a game")
     async def slash_start_game(self: Self, ctx: ApplicationContext) -> None:
         """Starts a game."""
-        await ctx.defer()
         try:
             current_game = await game.start_game(ctx)
             if current_game:
                 current_game = game.CurrentGame()
-                map: str = current_game.map
-                team1: Dict[str, game.Player] = current_game.team_1
-                team2: Dict[str, game.Player] = current_game.team_2
-                fp = current_game.first_pick
-
-            banner = f"https://static.icy-veins.com/images/heroes/tier-lists/maps/{map.replace(' ', '-').lower()}.jpg"
-            embed = discord.Embed(
-                title="**Game Started**",
-                color=discord.Colour.blurple(),
-                description=map,
-            )
-            embed.set_author(
-                name=f"Started by {ctx.user.display_name}",
-                icon_url=ctx.user.display_avatar,
-            )
-            embed.add_field(
-                name="Team 1" + (" (First Pick)" if fp == 1 else ""),
-                value=self.convert_team_to_string(team1),
-                inline=True,
-            )
-            embed.add_field(
-                name="VS.",
-                value="TANK\n\nSUPPORT\n\nASSASSIN\n\nASSASSIN\n\nOFFLANE",
-            )
-            embed.add_field(
-                name="Team 2" + (" (First Pick)" if fp == 2 else ""),
-                value=self.convert_team_to_string(team2),
-                inline=True,
-            )
-            embed.set_image(url=banner)
-            await ctx.respond(embed=embed)
-            # Move players after the embed is sent.
-            for player in team1.values():
-                await game.move_player_from_lobby_to_team_voice(player.user, 1, ctx)
-            for player in team2.values():
-                await game.move_player_from_lobby_to_team_voice(player.user, 2, ctx)
+                embed = current_game.create_embed()
+                embed.set_author(
+                    name=f"Started by {ctx.user.display_name}",
+                    icon_url=ctx.user.display_avatar,
+                )
+                await ctx.defer()
+                await ctx.respond(embed=embed)
+                # Move players after the embed is sent.
+                for player in current_game.team_1.values():
+                    await game.move_player_from_lobby_to_team_voice(player.user, 1, ctx)
+                for player in current_game.team_2.values():
+                    await game.move_player_from_lobby_to_team_voice(player.user, 2, ctx)
         except NotEnoughPlayersException:
+            await ctx.defer(ephemeral=True)
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),
@@ -85,6 +51,7 @@ class GameCog(commands.Cog):
             )
             await ctx.respond(embed=embed, ephemeral=True)
         except GameInProgressException:
+            await ctx.defer(ephemeral=True)
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),
@@ -92,6 +59,7 @@ class GameCog(commands.Cog):
             )
             await ctx.respond(embed=embed, ephemeral=True)
         except NotAdminException:
+            await ctx.defer(ephemeral=True)
             embed = discord.Embed(
                 title="Error",
                 color=discord.Colour.red(),
@@ -171,6 +139,27 @@ class GameCog(commands.Cog):
                 color=discord.Colour.red(),
                 description="Only admins can cancel a game.",
             )
+            await ctx.respond(embed=embed, ephemeral=True)
+
+    @discord.slash_command(name="reroll", description="Reroll the map of the currently running game")
+    async def slash_reroll_game(self: Self, ctx: ApplicationContext) -> None:
+        """Rerolls the map of a currently running game."""
+        try:
+            game.CurrentGame().reroll_map()
+            embed = game.CurrentGame().create_embed()
+            embed.set_author(
+                name=f"Started by {ctx.user.display_name}",
+                icon_url=ctx.user.display_avatar,
+            )
+            await ctx.defer()
+            await ctx.respond(embed=embed)
+        except NoGameInProgressException:
+            embed = discord.Embed(
+                title="Error",
+                color=discord.Colour.red(),
+                description="No game is currently in progress!",
+            )
+            await ctx.defer(ephemeral=True)
             await ctx.respond(embed=embed, ephemeral=True)
 
 
