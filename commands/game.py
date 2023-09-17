@@ -1,5 +1,5 @@
 import trueskill
-from discord import ApplicationContext, Member
+from discord import ApplicationContext, Member, Forbidden, HTTPException
 from commands.queue import Queue
 from commands.player_stats import (
     PlayerData,
@@ -37,7 +37,7 @@ def convert_int_to_role(role_int: int) -> str:
     elif role_int == 8 or role_int == 9:
         return "offlane"
     else:
-        raise Exception("Invalid role int")
+        raise ValueError("Invalid `role_int`. Must be a number within 0-9.")
 
 
 class Player:
@@ -337,12 +337,13 @@ async def move_player_from_lobby_to_team_voice(disc_user: Member, team_number: i
         team_voice_channel = ctx.guild.get_channel(TEAM_2_CHANNEL_ID)
         channel_id = TEAM_2_CHANNEL_ID
     else:
-        raise Exception("Invalid team number")
+        raise ValueError("Invalid `team_number`. Must be either 1 or 2.")
     if team_voice_channel is None:
         raise ChannelNotFoundException(f"Team {team_number} Voice Channel", channel_id)
     try:
         await disc_user.move_to(team_voice_channel)
-    except Exception:
+    except Forbidden | HTTPException as e:
+        logger.error(e)
         pass
 
 
@@ -384,7 +385,7 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
             winning_team = CurrentGame().team_2
             losing_team = CurrentGame().team_1
         else:
-            raise Exception("Invalid winner")
+            raise ValueError("Invalid `winner`. Must be either `team 1` or `team 2`.")
 
         logger.info(f"\nI think the winning team is {winning_team}\n")
         logger.info(f"\nI think the losing team is {losing_team}\n")

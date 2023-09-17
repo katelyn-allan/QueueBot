@@ -119,7 +119,12 @@ def populate_queue(guild: Guild) -> int:
     queued_role = guild.get_role(QUEUED_ID)
     for member in guild.members:
         if queued_role in member.roles:
-            Queue().queue.append(member)
+            try:
+                Queue().add(member)
+            except AlreadyInQueueException:
+                pass
+            except NoMainRoleException:
+                continue
     len_queue = len(Queue().queue)
     logger.info(f"Queue initialized with {len_queue}")
     return len_queue
