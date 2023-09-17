@@ -26,6 +26,7 @@ class GameCog(commands.Cog):
     @discord.slash_command(name="start", description="Start a game")
     async def slash_start_game(self: Self, ctx: ApplicationContext) -> None:
         """Starts a game."""
+        await ctx.defer()
         try:
             current_game = await game.start_game(ctx)
             if current_game:
@@ -35,7 +36,6 @@ class GameCog(commands.Cog):
                     name=f"Started by {ctx.user.display_name}",
                     icon_url=ctx.user.display_avatar,
                 )
-                await ctx.defer()
                 await ctx.respond(embed=embed)
                 # Move players after the embed is sent.
                 for player in current_game.team_1.values():
@@ -144,6 +144,7 @@ class GameCog(commands.Cog):
     @discord.slash_command(name="reroll", description="Reroll the map of the currently running game")
     async def slash_reroll_game(self: Self, ctx: ApplicationContext) -> None:
         """Rerolls the map of a currently running game."""
+        await ctx.defer()
         try:
             game.CurrentGame().reroll_map()
             embed = game.CurrentGame().create_embed()
@@ -151,7 +152,6 @@ class GameCog(commands.Cog):
                 name=f"Started by {ctx.user.display_name}",
                 icon_url=ctx.user.display_avatar,
             )
-            await ctx.defer()
             await ctx.respond(embed=embed)
         except NoGameInProgressException:
             embed = discord.Embed(
@@ -159,7 +159,6 @@ class GameCog(commands.Cog):
                 color=discord.Colour.red(),
                 description="No game is currently in progress!",
             )
-            await ctx.defer(ephemeral=True)
             await ctx.respond(embed=embed, ephemeral=True)
 
 
