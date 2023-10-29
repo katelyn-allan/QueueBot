@@ -524,10 +524,14 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
             logger.info(f"\nUpdated Winning team ratings: {winning_team_ratings}")
             logger.info(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
+            # Reorganize winning and losing teams into propper structures
+            winning_team_players = {player.user.id: player for player in winning_team.values()}
+            losing_team_players = {player.user.id: player for player in losing_team.values()}
+
             # Update players' ratings in the tracked player stats, and then re-add them to the queue
             logger.info("\nUpdating database entries...")
-            update_player_data_for_team(winning_team_ratings, winning_team, True, db_session)
-            update_player_data_for_team(losing_team_ratings, losing_team, False, db_session)
+            update_player_data_for_team(winning_team_ratings, winning_team_players, True, db_session)
+            update_player_data_for_team(losing_team_ratings, losing_team_players, False, db_session)
             db_session.commit()
 
             logger.info("\nDatabase updated :)")
