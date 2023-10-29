@@ -11,7 +11,7 @@ Base: DeclarativeMeta = declarative_base()
 class PlayerData(Base):
     __tablename__ = "players"
 
-    user_id = Column(String, primary_key=True, nullable=False)
+    user_id = Column(int, primary_key=True, nullable=False)
 
     # Rating info
     tank_mu = Column(Float, nullable=False, default=trueskill.MU)
