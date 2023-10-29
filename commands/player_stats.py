@@ -1,6 +1,6 @@
 from typing import Dict, Self
 import trueskill
-from sqlalchemy import Engine, Float, create_engine, Column, Integer, String
+from sqlalchemy import Engine, Float, create_engine, Column, Integer
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -9,6 +9,8 @@ Base: DeclarativeMeta = declarative_base()
 
 
 class PlayerData(Base):
+    """Database model class to represent a player's statistics."""
+
     __tablename__ = "players"
 
     user_id = Column(int, primary_key=True, nullable=False)

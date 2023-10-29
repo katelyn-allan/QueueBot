@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class RoleEnum(Enum):
-    """Enum class to store roles"""
+    """Enum class to store roles."""
 
     TANK = "tank"
     SUPPORT = "support"
@@ -338,7 +338,7 @@ def build_trueskill_object_for_list_of_players(
 
 
 def find_quality_of_teams(team1: List[Player], team2: List[Player], db_session: scoped_session = None) -> float:
-    """Finds the quality of two teams"""
+    """Finds the quality of two teams."""
     created_session = False
     if db_session is None:
         db_session = session()
@@ -525,7 +525,7 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
             logger.info(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
             # Update players' ratings in the tracked player stats, and then re-add them to the queue
-            logger.info(f"\nUpdating database entries...")
+            logger.info("\nUpdating database entries...")
             update_player_data_for_team(winning_team_ratings, winning_team, True, db_session)
             update_player_data_for_team(losing_team_ratings, losing_team, False, db_session)
             db_session.commit()
