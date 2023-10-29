@@ -310,8 +310,10 @@ def build_trueskill_object_for_list_of_players(
     players: List[Player], db_session: scoped_session = None
 ) -> Dict[int, trueskill.Rating]:
     """Builds a list of trueskill objects for a list of players."""
+    created_session = False
     if db_session is None:
         db_session = session()
+        created_session = True
 
     # Collect the user ids
     player_ids = [player.user.id for player in players]
@@ -329,18 +331,25 @@ def build_trueskill_object_for_list_of_players(
         raise
 
     finally:
-        db_session.close()
+        if created_session:
+            db_session.close()
 
     return ratings
 
 
 def find_quality_of_teams(team1: List[Player], team2: List[Player], db_session: scoped_session = None) -> float:
     """Finds the quality of two teams"""
+    created_session = False
     if db_session is None:
         db_session = session()
+        created_session = True
 
-    team1_ratings = build_trueskill_object_for_list_of_players(team1, db_session)
-    team2_ratings = build_trueskill_object_for_list_of_players(team2, db_session)
+    try:
+        team1_ratings = build_trueskill_object_for_list_of_players(team1, db_session)
+        team2_ratings = build_trueskill_object_for_list_of_players(team2, db_session)
+    finally:
+        if created_session:
+            db_session.close()
 
     # Calculate the match quality
     return trueskill.quality([team1_ratings.values(), team2_ratings.values()])
@@ -501,29 +510,33 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
         # Setting up session
         db_session: scoped_session = session()
 
-        logger.info(f"\nI think the winning team is {winning_team}\n")
-        logger.info(f"\nI think the losing team is {losing_team}\n")
-        # Update the ratings of the players
-        winning_team_ratings = build_trueskill_object_for_list_of_players(list(winning_team.values()))
-        logger.info(f"\nWinning team ratings: {winning_team_ratings}")
-        losing_team_ratings = build_trueskill_object_for_list_of_players(list(losing_team.values()))
-        logger.info(f"\nLosing team ratings: {losing_team_ratings}")
-        winning_team_ratings, losing_team_ratings = trueskill.rate(
-            [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
-        )
-        logger.info(f"\nUpdated Winning team ratings: {winning_team_ratings}")
-        logger.info(f"\nUpdated Losing team ratings: {losing_team_ratings}")
+        try:
+            logger.info(f"\nI think the winning team is {winning_team}\n")
+            logger.info(f"\nI think the losing team is {losing_team}\n")
+            # Update the ratings of the players
+            winning_team_ratings = build_trueskill_object_for_list_of_players(list(winning_team.values()))
+            logger.info(f"\nWinning team ratings: {winning_team_ratings}")
+            losing_team_ratings = build_trueskill_object_for_list_of_players(list(losing_team.values()))
+            logger.info(f"\nLosing team ratings: {losing_team_ratings}")
+            winning_team_ratings, losing_team_ratings = trueskill.rate(
+                [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
+            )
+            logger.info(f"\nUpdated Winning team ratings: {winning_team_ratings}")
+            logger.info(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
-        # Update players' ratings in the tracked player stats, and then re-add them to the queue
-        logger.info(f"\nUpdating database entries...")
-        update_player_data_for_team(winning_team_ratings, winning_team, True, db_session)
-        update_player_data_for_team(losing_team_ratings, losing_team, False, db_session)
-        db_session.commit()
+            # Update players' ratings in the tracked player stats, and then re-add them to the queue
+            logger.info(f"\nUpdating database entries...")
+            update_player_data_for_team(winning_team_ratings, winning_team, True, db_session)
+            update_player_data_for_team(losing_team_ratings, losing_team, False, db_session)
+            db_session.commit()
 
-        logger.info("\nDatabase updated :)")
+            logger.info("\nDatabase updated :)")
 
-        # Reset the current game.
-        CurrentGame().reset_state()
+            # Reset the current game.
+            CurrentGame().reset_state()
+
+        finally:
+            db_session.close()
 
     else:
         raise NotAdminException("You must be an admin to report the end of a game.")
