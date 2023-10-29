@@ -16,7 +16,7 @@ class PlayerData(Base):
 
     __tablename__ = "players"
 
-    user_id = Column(int, primary_key=True, nullable=False)
+    user_id = Column(Integer, primary_key=True, nullable=False)
 
     # Rating info
     tank_mu = Column(Float, nullable=False, default=trueskill.MU)
@@ -57,8 +57,8 @@ class PlayerData(Base):
 
 
 Base.metadata.create_all(ENGINE)
-Session = sessionmaker(bind=Engine)
-session = scoped_session()
+Session = sessionmaker(bind=ENGINE)
+session = scoped_session(Session)
 
 
 def find_player_stats(user_id: int) -> Dict[str, int | str]:
