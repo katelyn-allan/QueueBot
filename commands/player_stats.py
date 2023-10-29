@@ -3,6 +3,9 @@ import trueskill
 from sqlalchemy import Engine, Float, create_engine, Column, Integer
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.orm import scoped_session, sessionmaker
+import logging
+
+logger = logging.getLogger(__name__)
 
 ENGINE: Engine = create_engine("sqlite:///player_data.db", echo=True)
 Base: DeclarativeMeta = declarative_base()
@@ -57,8 +60,16 @@ Base.metadata.create_all(ENGINE)
 Session = sessionmaker(bind=Engine)
 session = scoped_session()
 
-#     self.rating: trueskill.Rating = trueskill.Rating(init_dict["rating"]["mu"], init_dict["rating"]["sigma"])
-# else:
-#     self.games_played: int = 0
-#     self.games_won: int = 0
-#     self.rating = trueskill.Rating()
+
+def find_player_stats(user_id: int) -> Dict[str, int | str]:
+    """Find a player's stats in the database."""
+    db_session: scoped_session = session()
+    search_attempt = db_session.query(PlayerData).filter_by(user_id=user_id).first()
+    if search_attempt is None:
+        logger.info(f"Creating new player entry for {user_id}")
+        new_player = PlayerData(user_id=user_id)
+        db_session.add(new_player)
+        db_session.commit()
+        search_attempt = new_player
+
+    return search_attempt.get_stats()
