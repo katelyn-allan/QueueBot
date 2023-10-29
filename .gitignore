@@ -4,6 +4,7 @@ player_data.json
 .python-version
 .vscode
 test.ipynb
+player_data.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
