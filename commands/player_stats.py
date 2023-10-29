@@ -1,25 +1,27 @@
 from typing import Dict, Self
-from sqlalchemy import Float, create_engine, Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
+import trueskill
+from sqlalchemy import Engine, Float, create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
+from sqlalchemy.orm import scoped_session, sessionmaker
 
-engine = create_engine("sqlite:///player_data.db", echo=True)
-Base = declarative_base()
+ENGINE: Engine = create_engine("sqlite:///player_data.db", echo=True)
+Base: DeclarativeMeta = declarative_base()
 
 
-class Player(Base):
+class PlayerData(Base):
     __tablename__ = "players"
 
     user_id = Column(String, primary_key=True, nullable=False)
 
     # Rating info
-    tank_mu = Column(Float, nullable=False)
-    tank_sigma = Column(Float, nullable=False)
-    support_mu = Column(Float, nullable=False)
-    support_sigma = Column(Float, nullable=False)
-    assassin_mu = Column(Float, nullable=False)
-    assassin_sigma = Column(Float, nullable=False)
-    offlane_mu = Column(Float, nullable=False)
-    offlane_sigma = Column(Float, nullable=False)
+    tank_mu = Column(Float, nullable=False, default=trueskill.MU)
+    tank_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
+    support_mu = Column(Float, nullable=False, default=trueskill.MU)
+    support_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
+    assassin_mu = Column(Float, nullable=False, default=trueskill.MU)
+    assassin_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
+    offlane_mu = Column(Float, nullable=False, default=trueskill.MU)
+    offlane_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
 
     # Play History Info
     tank_games_played = Column(Integer, nullable=False, default=0)
@@ -48,6 +50,10 @@ class Player(Base):
             }
         return return_dict
 
+
+Base.metadata.create_all(ENGINE)
+Session = sessionmaker(bind=Engine)
+session = scoped_session()
 
 #     self.rating: trueskill.Rating = trueskill.Rating(init_dict["rating"]["mu"], init_dict["rating"]["sigma"])
 # else:

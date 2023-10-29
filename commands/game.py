@@ -1,10 +1,9 @@
+from enum import Enum
+from sqlalchemy.orm import scoped_session
 import trueskill
 from discord import ApplicationContext, Member, Forbidden, HTTPException
 from commands.queue import Queue
-from commands.player_stats import (
-    PlayerData,
-    RoleStat,
-)
+from commands.player_stats import PlayerData, session
 from typing import List, Dict, Optional, Self, Type
 import numpy as np
 import itertools
@@ -26,24 +25,54 @@ import discord
 logger = logging.getLogger(__name__)
 
 
-def convert_int_to_role(role_int: int) -> str:
+class RoleEnum(Enum):
+    """Enum class to store roles"""
+
+    TANK = "tank"
+    SUPPORT = "support"
+    ASSASSIN = "assassin"
+    ASSASSIN2 = "assassin2"
+    OFFLANE = "offlane"
+
+    def __eq__(self: Self, other: str) -> bool:
+        """Override equality to allow for comparison with strings."""
+        if isinstance(other, RoleEnum):
+            return self.value == other.value
+        elif isinstance(other, str):
+            return self.value == other
+        return NotImplemented
+
+    def __repr__(self: Self) -> str:
+        """Override repr to return the role string."""
+        return self.value
+
+    def __str__(self: Self) -> str:
+        """Override str to return the role string."""
+        return self.value
+
+    def __hash__(self: Self) -> int:
+        """Override hash to return the hash of the role string."""
+        return hash(self.value)
+
+
+def convert_int_to_role(role_int: int) -> RoleEnum:
     """Helper function which turns a cost matrix indicy into a role string."""
     if role_int == 0 or role_int == 1:
-        return "tank"
+        return RoleEnum.TANK
     elif role_int == 2 or role_int == 3:
-        return "support"
+        return RoleEnum.SUPPORT
     elif role_int == 4 or role_int == 5 or role_int == 6 or role_int == 7:
-        return "assassin"
+        return RoleEnum.ASSASSIN
     elif role_int == 8 or role_int == 9:
-        return "offlane"
+        return RoleEnum.OFFLANE
     else:
         raise ValueError("Invalid `role_int`. Must be a number within 0-9.")
 
 
 class Player:
-    """Class to store a player's role and rating for use in the game."""
+    """Class to store a player's role for use in the game."""
 
-    def __init__(self: Self, user: Member, role: str) -> None:
+    def __init__(self: Self, user: Member, role: RoleEnum) -> None:
         """Init that takes in a user and role argument to create a Player object.
 
         Because the default User or Member class does not allow for role assignment, this class acts
@@ -51,16 +80,16 @@ class Player:
         """
         self.user = user
         self.role = role
-        self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
 
-    def report_player_data(self: Self, win: bool) -> None:
-        """Updates the player's rating in the PLAYER_DATA dictionary."""
-        player_data_obj: RoleStat = getattr(PlayerData().player_data[str(self.user.id)], self.role)
-        logger.info(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")
-        player_data_obj.rating = self.rating
-        player_data_obj.games_played += 1
-        if win:
-            player_data_obj.games_won += 1
+    def calculate_trueskill(self: Self, data: PlayerData) -> trueskill.Rating:
+        """Calculates the trueskill rating of a player based on their role."""
+        if self.role == RoleEnum.ASSASSIN2:
+            lookup_role = RoleEnum.ASSASSIN
+        else:
+            lookup_role = self.role
+        mu = getattr(data, f"{lookup_role}_mu")
+        sigma = getattr(data, f"{lookup_role}_sigma")
+        return trueskill.Rating(mu, sigma)
 
 
 class CurrentGame:
@@ -265,10 +294,34 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
     return two_teams
 
 
+def find_quality_of_teams(team1: List[Player], team2: List[Player], db_session: scoped_session = None) -> float:
+    """Finds the quality of two teams"""
+    if db_session is None:
+        db_session = session()
+
+    # Collect the user ids
+    team1_ids = [player.user.id for player in team1]
+    team2_ids = [player.user.id for player in team2]
+
+    # Gather playerdata for each player
+    team1_playerdata = db_session.query(PlayerData).filter(PlayerData.user_id.in_(team1_ids)).all()
+    team1_playerdata = {player.user_id: player for player in team1_playerdata}
+    team2_playerdata = db_session.query(PlayerData).filter(PlayerData.user_id.in_(team2_ids)).all()
+    team2_playerdata = {player.user_id: player for player in team2_playerdata}
+
+    # Calculate the trueskill ratings for each player
+    team1_ratings = [player.calculate_trueskill(team1_playerdata[player.user.id]) for player in team1]
+    team2_ratings = [player.calculate_trueskill(team2_playerdata[player.user.id]) for player in team2]
+
+    # Calculate the match quality
+    return trueskill.quality([team1_ratings, team2_ratings])
+
+
 def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict[str, Player] | str]:
     """Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation."""
     best_game = None
     best_quality = 10000
+
     for game in valid_games:
         # Find every permutation of team comp,
         # in which a valid team has 5 players:
@@ -279,12 +332,7 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict
         for combo in team_combos:
             team1 = combo[0]
             team2 = combo[1]
-            match_quality = trueskill.quality(
-                [
-                    [player.rating for player in team1],
-                    [player.rating for player in team2],
-                ]
-            )
+            match_quality = find_quality_of_teams(team1, team2)
             # Check if match_quality is closer to 0.5 than the current best match_quality.
             if abs(0.5 - match_quality) < abs(0.5 - best_quality):
                 best_game = combo
@@ -296,8 +344,8 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict
     team1 = {}
     team2 = {}
     for player in best_game[0]:
-        if player.role == "assassin" and "assassin" in team1:
-            team1["assassin2"] = player
+        if player.role == RoleEnum.ASSASSIN and RoleEnum.ASSASSIN.value in team1:
+            team1[RoleEnum.ASSASSIN2.value] = player
         else:
             team1[player.role] = player
     for player in best_game[1]:
