@@ -32,6 +32,8 @@ frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
+greenlet==3.0.1
+    # via sqlalchemy
 identify==2.5.27
     # via pre-commit
 idna==3.4
@@ -74,8 +76,12 @@ scipy==1.10.1
     # via -r requirements.in
 six==1.16.0
     # via trueskill
+sqlalchemy==2.0.22
+    # via -r requirements.in
 trueskill==0.4.5
     # via -r requirements.in
+typing-extensions==4.8.0
+    # via sqlalchemy
 virtualenv==20.24.3
     # via pre-commit
 wheel==0.41.2
