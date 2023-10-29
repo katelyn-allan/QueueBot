@@ -1,4 +1,5 @@
 AUTH_TOKEN=Your auth token here :)
+DB_PATH=Your db path here :)
 
 # ROLES
 TANK=1110365029666148532

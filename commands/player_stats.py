@@ -4,10 +4,14 @@ from sqlalchemy import Engine, Float, create_engine, Column, Integer
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.orm import scoped_session, sessionmaker
 import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-ENGINE: Engine = create_engine("sqlite:///player_data.db", echo=True)
+ENGINE: Engine = create_engine(f"sqlite:///{os.getenv('DB_PATH')}", echo=True)
 Base: DeclarativeMeta = declarative_base()
 
 
