@@ -1,8 +1,5 @@
-import trueskill
-import json
-from typing import Any, Dict, List, Self, Type
-from discord import ApplicationContext, Member
-from sqlalchemy import Float, create_engine, Column, Date, Integer, String, ForeignKey
+from typing import Dict, Self
+from sqlalchemy import Float, create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 
 engine = create_engine("sqlite:///player_data.db", echo=True)
