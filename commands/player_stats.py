@@ -1,130 +1,79 @@
+from typing import Dict, Self
 import trueskill
-import json
-from typing import Any, Dict, List, Self, Type
-from discord import ApplicationContext, Member
+from sqlalchemy import Engine, Float, create_engine, Column, Integer
+from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
+from sqlalchemy.orm import scoped_session, sessionmaker
+import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+ENGINE: Engine = create_engine(f"sqlite:///{os.getenv('DB_PATH')}", echo=True)
+Base: DeclarativeMeta = declarative_base()
 
 
-class RoleStat:
-    """Tracks a player's stats across a specific role."""
+class PlayerData(Base):
+    """Database model class to represent a player's statistics."""
 
-    def __init__(self: Self, init_dict: Dict[str, Any] | None = None) -> None:
-        """Initializes the RoleStat class."""
-        if init_dict:
-            self.games_played: int = init_dict["games_played"]
-            self.games_won: int = init_dict["games_won"]
-            self.rating: trueskill.Rating = trueskill.Rating(init_dict["rating"]["mu"], init_dict["rating"]["sigma"])
-        else:
-            self.games_played: int = 0
-            self.games_won: int = 0
-            self.rating = trueskill.Rating()
+    __tablename__ = "players"
 
-    def convert_to_dict(self: Self) -> Dict[str, float | str]:
-        """Converts all fields to dictionaries to allow dumping to json."""
-        outp = {}
-        outp["games_played"] = self.games_played
-        outp["games_won"] = self.games_won
-        outp["rating"] = {
-            "mu": self.rating.mu,
-            "sigma": self.rating.sigma,
-        }
-        return outp
+    user_id = Column(Integer, primary_key=True, nullable=False)
 
-    def get_stats(self: Self) -> Dict[str, float | str]:
-        """Returns a dictionary of the player's stats."""
-        if self.games_played != 0:
-            return {
-                "games_played": self.games_played,
-                "games_won": self.games_won,
-                "win_rate": str(self.games_won / self.games_played * 100) + "%",
+    # Rating info
+    tank_mu = Column(Float, nullable=False, default=trueskill.MU)
+    tank_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
+    support_mu = Column(Float, nullable=False, default=trueskill.MU)
+    support_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
+    assassin_mu = Column(Float, nullable=False, default=trueskill.MU)
+    assassin_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
+    offlane_mu = Column(Float, nullable=False, default=trueskill.MU)
+    offlane_sigma = Column(Float, nullable=False, default=trueskill.SIGMA)
+
+    # Play History Info
+    tank_games_played = Column(Integer, nullable=False, default=0)
+    tank_games_won = Column(Integer, nullable=False, default=0)
+    support_games_played = Column(Integer, nullable=False, default=0)
+    support_games_won = Column(Integer, nullable=False, default=0)
+    assassin_games_played = Column(Integer, nullable=False, default=0)
+    assassin_games_won = Column(Integer, nullable=False, default=0)
+    offlane_games_played = Column(Integer, nullable=False, default=0)
+    offlane_games_won = Column(Integer, nullable=False, default=0)
+
+    def get_stats(self: Self) -> Dict[str, int | str]:
+        """Return a representation of the player's stats."""
+        return_dict = {}
+        for role in ["tank", "support", "assassin", "offlane"]:
+            games_played = getattr(self, f"{role}_games_played")
+            games_won = getattr(self, f"{role}_games_won")
+            if games_played != 0:
+                win_rate = games_won / games_played * 100
+            else:
+                win_rate = 0
+            return_dict[role] = {
+                "games_played": games_played,
+                "games_won": games_won,
+                "win_rate": str(win_rate) + "%",
             }
-        else:
-            return {
-                "games_played": 0,
-                "games_won": 0,
-                "win_rate": "0%",
-            }
+        return return_dict
 
 
-class PlayerStats:
-    """Container class for player stats across multiple roles."""
-
-    def __init__(self: Self, init_dict: Dict[str, Any] | None = None) -> None:
-        """Initializes the PlayerStats class."""
-        if init_dict:
-            self.tank = RoleStat(init_dict["tank"])
-            self.support = RoleStat(init_dict["support"])
-            self.assassin = RoleStat(init_dict["assassin"])
-            self.offlane = RoleStat(init_dict["offlane"])
-        else:
-            self.tank = RoleStat()
-            self.support = RoleStat()
-            self.assassin = RoleStat()
-            self.offlane = RoleStat()
-
-    def convert_to_dict(self: Self) -> Dict[str, float | str]:
-        """Converts all fields to dictionaries to allow dumping to json."""
-        outp = {}
-        outp["tank"] = self.tank.convert_to_dict()
-        outp["support"] = self.support.convert_to_dict()
-        outp["assassin"] = self.assassin.convert_to_dict()
-        outp["offlane"] = self.offlane.convert_to_dict()
-        return outp
+Base.metadata.create_all(ENGINE)
+Session = sessionmaker(bind=ENGINE)
+session = scoped_session(Session)
 
 
-class PlayerData:
-    """Singleton class holding player data."""
+def find_player_stats(user_id: int) -> Dict[str, int | str]:
+    """Find a player's stats in the database."""
+    db_session: scoped_session = session()
+    search_attempt = db_session.query(PlayerData).filter_by(user_id=user_id).first()
+    if search_attempt is None:
+        logger.info(f"Creating new player entry for {user_id}")
+        new_player = PlayerData(user_id=user_id)
+        db_session.add(new_player)
+        db_session.commit()
+        search_attempt = new_player
 
-    def __new__(cls: Type["PlayerData"]) -> "PlayerData":
-        """Creates a singleton instance of the PlayerData class."""
-        if not hasattr(cls, "instance"):
-            cls.instance = super(PlayerData, cls).__new__(cls)
-        return cls.instance
-
-    def __init__(self: Self) -> None:
-        """Initializes the player_data dict from the json file."""
-        if not hasattr(self, "player_data"):
-            self.player_data: Dict[str, PlayerStats] = self.load_player_data()
-
-    def load_player_data(self: Self) -> Dict[str, PlayerStats]:
-        """Loads player_data.json into memory for manipulation."""
-        with open("player_data.json", "r") as f:
-            dict_load = json.load(f)
-            for key, value in dict_load.items():
-                dict_load[key] = PlayerStats(value)
-            return dict_load
-
-    def reload_palyer_data(self: Self) -> None:
-        """Reloads player data."""
-        self.player_data: Dict[str, PlayerStats] = self.load_player_data()
-
-    def update_player_data(self: Self) -> None:
-        """Updates player_data.json with the current data in memory."""
-        data_copy = self.player_data.copy()
-        for key, value in data_copy.items():
-            data_copy[key] = value.convert_to_dict()
-        with open("player_data.json", "w") as f:
-            json.dump(data_copy, f)
-        self.reload_palyer_data()
-
-    def instantiate_new_players(self: Self, users: List[Member]) -> None:
-        """Instantiates new players in the player_data dict."""
-        for user in users:
-            if user.id not in self.player_data:
-                self.player_data[str(user.id)] = PlayerStats()
-        self.update_player_data()
-
-
-PlayerData()
-
-
-def get_player_stats(ctx: ApplicationContext) -> Dict[str, Dict[str, float]]:
-    """Returns the player's stats."""
-    if str(ctx.user.id) not in PlayerData().player_data:
-        PlayerData().instantiate_new_players([ctx.user])
-    user_data = PlayerData().player_data[str(ctx.user.id)]
-    returned_stats = {}
-    returned_stats["tank"] = user_data.tank.get_stats()
-    returned_stats["support"] = user_data.support.get_stats()
-    returned_stats["assassin"] = user_data.assassin.get_stats()
-    returned_stats["offlane"] = user_data.offlane.get_stats()
-    return returned_stats
+    return search_attempt.get_stats()

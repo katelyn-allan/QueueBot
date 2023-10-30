@@ -2,6 +2,7 @@ import discord
 import os
 from dotenv import load_dotenv
 import logging
+
 from commands.queue import populate_queue
 from util.env_load import GENERAL_CHANNEL_ID
 

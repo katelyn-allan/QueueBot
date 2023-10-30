@@ -1,10 +1,9 @@
+from enum import Enum
+from sqlalchemy.orm import scoped_session
 import trueskill
 from discord import ApplicationContext, Member, Forbidden, HTTPException
 from commands.queue import Queue
-from commands.player_stats import (
-    PlayerData,
-    RoleStat,
-)
+from commands.player_stats import PlayerData, session
 from typing import List, Dict, Optional, Self, Type
 import numpy as np
 import itertools
@@ -26,24 +25,54 @@ import discord
 logger = logging.getLogger(__name__)
 
 
-def convert_int_to_role(role_int: int) -> str:
+class RoleEnum(Enum):
+    """Enum class to store roles."""
+
+    TANK = "tank"
+    SUPPORT = "support"
+    ASSASSIN = "assassin"
+    ASSASSIN2 = "assassin2"
+    OFFLANE = "offlane"
+
+    def __eq__(self: Self, other: str) -> bool:
+        """Override equality to allow for comparison with strings."""
+        if isinstance(other, RoleEnum):
+            return self.value == other.value
+        elif isinstance(other, str):
+            return self.value == other
+        return NotImplemented
+
+    def __repr__(self: Self) -> str:
+        """Override repr to return the role string."""
+        return self.value
+
+    def __str__(self: Self) -> str:
+        """Override str to return the role string."""
+        return self.value
+
+    def __hash__(self: Self) -> int:
+        """Override hash to return the hash of the role string."""
+        return hash(self.value)
+
+
+def convert_int_to_role(role_int: int) -> RoleEnum:
     """Helper function which turns a cost matrix indicy into a role string."""
     if role_int == 0 or role_int == 1:
-        return "tank"
+        return RoleEnum.TANK
     elif role_int == 2 or role_int == 3:
-        return "support"
+        return RoleEnum.SUPPORT
     elif role_int == 4 or role_int == 5 or role_int == 6 or role_int == 7:
-        return "assassin"
+        return RoleEnum.ASSASSIN
     elif role_int == 8 or role_int == 9:
-        return "offlane"
+        return RoleEnum.OFFLANE
     else:
         raise ValueError("Invalid `role_int`. Must be a number within 0-9.")
 
 
 class Player:
-    """Class to store a player's role and rating for use in the game."""
+    """Class to store a player's role for use in the game."""
 
-    def __init__(self: Self, user: Member, role: str) -> None:
+    def __init__(self: Self, user: Member, role: RoleEnum) -> None:
         """Init that takes in a user and role argument to create a Player object.
 
         Because the default User or Member class does not allow for role assignment, this class acts
@@ -51,16 +80,16 @@ class Player:
         """
         self.user = user
         self.role = role
-        self.rating = getattr(PlayerData().player_data[str(user.id)], role).rating
 
-    def report_player_data(self: Self, win: bool) -> None:
-        """Updates the player's rating in the PLAYER_DATA dictionary."""
-        player_data_obj: RoleStat = getattr(PlayerData().player_data[str(self.user.id)], self.role)
-        logger.info(f"I think {self.user.display_name}'s player_data object is {player_data_obj}")
-        player_data_obj.rating = self.rating
-        player_data_obj.games_played += 1
-        if win:
-            player_data_obj.games_won += 1
+    def calculate_trueskill(self: Self, data: PlayerData) -> trueskill.Rating:
+        """Calculates the trueskill rating of a player based on their role."""
+        if self.role == RoleEnum.ASSASSIN2:
+            lookup_role = RoleEnum.ASSASSIN
+        else:
+            lookup_role = self.role
+        mu = getattr(data, f"{lookup_role}_mu")
+        sigma = getattr(data, f"{lookup_role}_sigma")
+        return trueskill.Rating(mu, sigma)
 
 
 class CurrentGame:
@@ -221,7 +250,7 @@ def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, Li
     # Check if this is a valid set, if not, continue to the next 10 perm.
     if any(matrix[row_ind, col_ind] == 2):
         return
-    game_dict = {"tank": [], "support": [], "assassin": [], "offlane": []}
+    game_dict = {RoleEnum.TANK: [], RoleEnum.SUPPORT: [], RoleEnum.ASSASSIN: [], RoleEnum.OFFLANE: []}
     for i, player in enumerate(perm):
         role = convert_int_to_role(col_ind[i])
         game_dict[role].append(Player(player, role))
@@ -231,7 +260,19 @@ def find_valid_game_for_permutation(perm: List[Member]) -> Optional[Dict[str, Li
 def find_valid_games() -> List[Dict[str, List[Player]]]:
     """Finds all valid games of 10 players from the queue."""
     players_in_queue: List[Member] = Queue().queue.copy()
-    PlayerData().instantiate_new_players(players_in_queue)
+
+    # Ensure all players are in the db
+    db_session: scoped_session = session()
+    for player in players_in_queue:
+        player_data = db_session.query(PlayerData).filter(PlayerData.user_id == player.id).first()
+        if player_data is None:
+            # Create a database entry for this player
+            logger.warn(f"Player {player.display_name} not found in database, creating entry...")
+            player_data = PlayerData(user_id=player.id)
+            db_session.add(player_data)
+    db_session.commit()
+    db_session.close()
+
     player_set = set(players_in_queue)
     combinations_of_players: List[List[Member]] = [list(comb) for comb in itertools.combinations(player_set, 10)]
     valid_games = []
@@ -247,10 +288,10 @@ def find_valid_games() -> List[Dict[str, List[Player]]]:
 def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Player]]]:
     """Finds every combination of players by role and returns a list of unique two team combinations."""
     combinations = []
-    for tank in players["tank"]:
-        for support in players["support"]:
-            for assassin in itertools.combinations(players["assassin"], 2):
-                for offlane in players["offlane"]:
+    for tank in players[RoleEnum.TANK]:
+        for support in players[RoleEnum.SUPPORT]:
+            for assassin in itertools.combinations(players[RoleEnum.ASSASSIN], 2):
+                for offlane in players[RoleEnum.OFFLANE]:
                     combinations.append([tank, support, assassin[0], assassin[1], offlane])
     two_teams = []
     for team1 in combinations:
@@ -265,10 +306,60 @@ def get_team_combinations(players: Dict[str, List[Player]]) -> List[List[List[Pl
     return two_teams
 
 
+def build_trueskill_object_for_list_of_players(
+    players: List[Player], db_session: scoped_session = None
+) -> Dict[int, trueskill.Rating]:
+    """Builds a list of trueskill objects for a list of players."""
+    created_session = False
+    if db_session is None:
+        db_session = session()
+        created_session = True
+
+    # Collect the user ids
+    player_ids = [player.user.id for player in players]
+    playerdata_objs = db_session.query(PlayerData).filter(PlayerData.user_id.in_(player_ids)).all()
+    playerdata_objs = {player.user_id: player for player in playerdata_objs}
+
+    ratings = {}
+
+    try:
+        assert len(playerdata_objs) == len(players)
+        ratings = {player.user.id: player.calculate_trueskill(playerdata_objs[player.user.id]) for player in players}
+
+    except AssertionError:
+        logger.error("Could not find player data for all players in the game.")
+        raise
+
+    finally:
+        if created_session:
+            db_session.close()
+
+    return ratings
+
+
+def find_quality_of_teams(team1: List[Player], team2: List[Player], db_session: scoped_session = None) -> float:
+    """Finds the quality of two teams."""
+    created_session = False
+    if db_session is None:
+        db_session = session()
+        created_session = True
+
+    try:
+        team1_ratings = build_trueskill_object_for_list_of_players(team1, db_session)
+        team2_ratings = build_trueskill_object_for_list_of_players(team2, db_session)
+    finally:
+        if created_session:
+            db_session.close()
+
+    # Calculate the match quality
+    return trueskill.quality([team1_ratings.values(), team2_ratings.values()])
+
+
 def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict[str, Player] | str]:
     """Takes in a set of valid games, broken down by role, and returns the best game by trueskill rating calculation."""
     best_game = None
     best_quality = 10000
+
     for game in valid_games:
         # Find every permutation of team comp,
         # in which a valid team has 5 players:
@@ -279,12 +370,7 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict
         for combo in team_combos:
             team1 = combo[0]
             team2 = combo[1]
-            match_quality = trueskill.quality(
-                [
-                    [player.rating for player in team1],
-                    [player.rating for player in team2],
-                ]
-            )
+            match_quality = find_quality_of_teams(team1, team2)
             # Check if match_quality is closer to 0.5 than the current best match_quality.
             if abs(0.5 - match_quality) < abs(0.5 - best_quality):
                 best_game = combo
@@ -296,13 +382,13 @@ def find_best_game(valid_games: List[Dict[str, List[Player]]]) -> Dict[str, Dict
     team1 = {}
     team2 = {}
     for player in best_game[0]:
-        if player.role == "assassin" and "assassin" in team1:
-            team1["assassin2"] = player
+        if player.role == RoleEnum.ASSASSIN and RoleEnum.ASSASSIN in team1:
+            team1[RoleEnum.ASSASSIN2] = player
         else:
             team1[player.role] = player
     for player in best_game[1]:
-        if player.role == "assassin" and "assassin" in team2:
-            team2["assassin2"] = player
+        if player.role == RoleEnum.ASSASSIN and RoleEnum.ASSASSIN in team2:
+            team2[RoleEnum.ASSASSIN2] = player
         else:
             team2[player.role] = player
 
@@ -366,6 +452,50 @@ async def move_all_team_players_to_lobby(ctx: ApplicationContext) -> None:
         await member.move_to(lobby_voice_channel)
 
 
+def update_player_data_for_team(
+    ratings: Dict[int, trueskill.Rating], players: Dict[int, Player], win: bool, db_session: scoped_session
+) -> None:
+    """Updates the DB record for players on a team to match the new trueskill rating."""
+    created_session = False
+    if db_session is None:
+        db_session = session()
+        created_session = True
+
+    try:
+        for player_id in ratings:
+            player: PlayerData = db_session.query(PlayerData).filter(PlayerData.user_id == player_id).first()
+            if players[player_id].role == RoleEnum.ASSASSIN2:
+                players[player_id].role = RoleEnum.ASSASSIN
+            setattr(
+                player,
+                f"{players[player_id].role}_mu",
+                ratings[player_id].mu,
+            )
+            setattr(
+                player,
+                f"{players[player_id].role}_sigma",
+                ratings[player_id].sigma,
+            )
+            setattr(
+                player,
+                f"{players[player_id].role}_games_played",
+                getattr(player, f"{players[player_id].role}_games_played") + 1,
+            )
+            if win:
+                setattr(
+                    player,
+                    f"{players[player_id].role}_games_won",
+                    getattr(player, f"{players[player_id].role}_games_won") + 1,
+                )
+
+        db_session.flush()
+
+    finally:
+        if created_session:
+            db_session.commit()
+            db_session.close()
+
+
 def end_game(ctx: ApplicationContext, winner: str) -> None:
     """
     If a game is currently running, ends the game and moves all players back to the lobby.
@@ -387,34 +517,40 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
         else:
             raise ValueError("Invalid `winner`. Must be either `team 1` or `team 2`.")
 
-        logger.info(f"\nI think the winning team is {winning_team}\n")
-        logger.info(f"\nI think the losing team is {losing_team}\n")
-        # Update the ratings of the players
-        winning_team_ratings = [player.rating for player in winning_team.values()]
-        logger.info(f"\nWinning team ratings: {winning_team_ratings}")
-        losing_team_ratings = [player.rating for player in losing_team.values()]
-        logger.info(f"\nLosing team ratings: {losing_team_ratings}")
-        winning_team_ratings, losing_team_ratings = trueskill.rate(
-            [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
-        )
-        logger.info(f"\nUpdated Winning team ratings: {winning_team_ratings}")
-        logger.info(f"\nUpdated Losing team ratings: {losing_team_ratings}")
+        # Setting up session
+        db_session: scoped_session = session()
 
-        # Update players' ratings in the tracked player stats, and then re-add them to the queue
-        for player in winning_team.values():
-            logger.info(f"Updating player {player.user.display_name}...")
-            player.report_player_data(win=True)
-        for player in losing_team.values():
-            logger.info(f"Updating player {player.user.display_name}...")
-            player.report_player_data(win=False)
+        try:
+            logger.info(f"\nI think the winning team is {winning_team}\n")
+            logger.info(f"\nI think the losing team is {losing_team}\n")
+            # Update the ratings of the players
+            winning_team_ratings = build_trueskill_object_for_list_of_players(list(winning_team.values()))
+            logger.info(f"\nWinning team ratings: {winning_team_ratings}")
+            losing_team_ratings = build_trueskill_object_for_list_of_players(list(losing_team.values()))
+            logger.info(f"\nLosing team ratings: {losing_team_ratings}")
+            winning_team_ratings, losing_team_ratings = trueskill.rate(
+                [winning_team_ratings, losing_team_ratings], ranks=[0, 1]
+            )
+            logger.info(f"\nUpdated Winning team ratings: {winning_team_ratings}")
+            logger.info(f"\nUpdated Losing team ratings: {losing_team_ratings}")
 
-        # Update the saved data to match the data in memory
-        logger.info("Running update_player_data()...")
-        PlayerData().update_player_data()
-        logger.info("Player data updated!")
+            # Reorganize winning and losing teams into propper structures
+            winning_team_players = {player.user.id: player for player in winning_team.values()}
+            losing_team_players = {player.user.id: player for player in losing_team.values()}
 
-        # Reset the current game.
-        CurrentGame().reset_state()
+            # Update players' ratings in the tracked player stats, and then re-add them to the queue
+            logger.info("\nUpdating database entries...")
+            update_player_data_for_team(winning_team_ratings, winning_team_players, True, db_session)
+            update_player_data_for_team(losing_team_ratings, losing_team_players, False, db_session)
+            db_session.commit()
+
+            logger.info("\nDatabase updated :)")
+
+            # Reset the current game.
+            CurrentGame().reset_state()
+
+        finally:
+            db_session.close()
 
     else:
         raise NotAdminException("You must be an admin to report the end of a game.")
