@@ -464,8 +464,18 @@ def update_player_data_for_team(
     try:
         for player_id in ratings:
             player: PlayerData = db_session.query(PlayerData).filter(PlayerData.user_id == player_id).first()
-            player.mu = ratings[player_id].mu
-            player.sigma = ratings[player_id].sigma
+            if players[player_id].role == RoleEnum.ASSASSIN2:
+                players[player_id].role = RoleEnum.ASSASSIN
+            setattr(
+                player,
+                f"{players[player_id].role}_mu",
+                ratings[player_id].mu,
+            )
+            setattr(
+                player,
+                f"{players[player_id].role}_sigma",
+                ratings[player_id].sigma,
+            )
             setattr(
                 player,
                 f"{players[player_id].role}_games_played",
