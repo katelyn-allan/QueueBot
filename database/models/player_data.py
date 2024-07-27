@@ -7,12 +7,11 @@ import logging
 import os
 from dotenv import load_dotenv
 
+from database.db import Base, session
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-
-ENGINE: Engine = create_engine(f"sqlite:///{os.getenv('DB_PATH')}", echo=True)
-Base: DeclarativeMeta = declarative_base()
 
 
 class PlayerData(Base):
@@ -58,11 +57,6 @@ class PlayerData(Base):
                 "win_rate": str(win_rate) + "%",
             }
         return return_dict
-
-
-Base.metadata.create_all(ENGINE)
-Session = sessionmaker(bind=ENGINE)
-session = scoped_session(Session)
 
 
 def find_player_stats(user_id: int) -> Dict[str, int | str]:

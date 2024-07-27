@@ -3,7 +3,8 @@ from sqlalchemy.orm import scoped_session
 import trueskill
 from discord import ApplicationContext, Member, Forbidden, HTTPException
 from commands.queue import Queue
-from commands.player_stats import PlayerData, session
+from database.models.player_data import PlayerData
+from database.db import session
 from typing import List, Dict, Optional, Self, Type
 import numpy as np
 import itertools
