@@ -1,13 +1,13 @@
-from typing import Dict, Self
+from typing import Dict, Self, TYPE_CHECKING
 import trueskill
-from sqlalchemy import Engine, Float, create_engine, Column, Integer
-from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy import Float, Column, Integer
 import logging
-import os
 from dotenv import load_dotenv
 
 from database.db import Base, session
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import scoped_session
 
 load_dotenv()
 

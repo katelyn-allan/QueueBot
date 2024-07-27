@@ -1,7 +1,5 @@
 """Initialize the database and handle corresponding logical setup."""
-from typing import Self
-import trueskill
-from sqlalchemy import Engine, Float, create_engine, Column, Integer
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.orm import scoped_session, sessionmaker
 import logging
