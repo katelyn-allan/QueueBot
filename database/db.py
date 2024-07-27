@@ -27,12 +27,14 @@ class DBGlobalSession:
         """Handle creation of a new class instance.
 
         Because this is a singleton, we only want to create one instance of the class,
-        and return that instance every time a new instance is requested."""
+        and return that instance every time a new instance is requested.
+        """
         if cls.__instance is None:
             cls.__instance = super(DBGlobalSession, cls).__new__(cls)
         return cls.__instance
 
     def __init__(self: Self) -> None:
+        """Initialize this class instance."""
         pass
 
     def assign_session_class(self: Self, session_class: scoped_session) -> None:
@@ -46,7 +48,6 @@ class DBGlobalSession:
 
 def init_db() -> None:
     """Initialize the database."""
-
     logger.info("Initializing database...")
     Base.metadata.create_all(ENGINE)
     logger.info("Creating session...")
