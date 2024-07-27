@@ -4,7 +4,7 @@ from sqlalchemy import Float, Column, Integer
 import logging
 from dotenv import load_dotenv
 
-from database.db import Base, session
+from database.db import Base, DBGlobalSession, session
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import scoped_session
@@ -61,7 +61,7 @@ class PlayerData(Base):
 
 def find_player_stats(user_id: int) -> Dict[str, int | str]:
     """Find a player's stats in the database."""
-    db_session: scoped_session = session()
+    db_session: scoped_session = DBGlobalSession.new_session()
     search_attempt = db_session.query(PlayerData).filter_by(user_id=user_id).first()
     if search_attempt is None:
         logger.info(f"Creating new player entry for {user_id}")
