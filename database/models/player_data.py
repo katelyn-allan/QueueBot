@@ -1,18 +1,17 @@
-from typing import Dict, Self
+from typing import Dict, Self, TYPE_CHECKING
 import trueskill
-from sqlalchemy import Engine, Float, create_engine, Column, Integer
-from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy import Float, Column, Integer
 import logging
-import os
 from dotenv import load_dotenv
+
+from database.db import Base, DBGlobalSession
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import scoped_session
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-
-ENGINE: Engine = create_engine(f"sqlite:///{os.getenv('DB_PATH')}", echo=True)
-Base: DeclarativeMeta = declarative_base()
 
 
 class PlayerData(Base):
@@ -60,14 +59,9 @@ class PlayerData(Base):
         return return_dict
 
 
-Base.metadata.create_all(ENGINE)
-Session = sessionmaker(bind=ENGINE)
-session = scoped_session(Session)
-
-
 def find_player_stats(user_id: int) -> Dict[str, int | str]:
     """Find a player's stats in the database."""
-    db_session: scoped_session = session()
+    db_session: scoped_session = DBGlobalSession().new_session()
     search_attempt = db_session.query(PlayerData).filter_by(user_id=user_id).first()
     if search_attempt is None:
         logger.info(f"Creating new player entry for {user_id}")

@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import logging
 
 from commands.queue import populate_queue
+from database.db import init_db
 from util.env_load import GENERAL_CHANNEL_ID
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
     )
+    init_db()
     bot.load_extension("cogs.game_cog")
     bot.load_extension("cogs.queue_cog")
     bot.load_extension("cogs.player_info_cog")

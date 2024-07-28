@@ -3,7 +3,8 @@ from sqlalchemy.orm import scoped_session
 import trueskill
 from discord import ApplicationContext, Member, Forbidden, HTTPException
 from commands.queue import Queue
-from commands.player_stats import PlayerData, session
+from database.models.player_data import PlayerData
+from database.db import DBGlobalSession
 from typing import List, Dict, Optional, Self, Type
 import numpy as np
 import itertools
@@ -262,7 +263,7 @@ def find_valid_games() -> List[Dict[str, List[Player]]]:
     players_in_queue: List[Member] = Queue().queue.copy()
 
     # Ensure all players are in the db
-    db_session: scoped_session = session()
+    db_session: scoped_session = DBGlobalSession().new_session()
     for player in players_in_queue:
         player_data = db_session.query(PlayerData).filter(PlayerData.user_id == player.id).first()
         if player_data is None:
@@ -312,7 +313,7 @@ def build_trueskill_object_for_list_of_players(
     """Builds a list of trueskill objects for a list of players."""
     created_session = False
     if db_session is None:
-        db_session = session()
+        db_session = DBGlobalSession().new_session()
         created_session = True
 
     # Collect the user ids
@@ -341,7 +342,7 @@ def find_quality_of_teams(team1: List[Player], team2: List[Player], db_session: 
     """Finds the quality of two teams."""
     created_session = False
     if db_session is None:
-        db_session = session()
+        db_session = DBGlobalSession().new_session()
         created_session = True
 
     try:
@@ -458,7 +459,7 @@ def update_player_data_for_team(
     """Updates the DB record for players on a team to match the new trueskill rating."""
     created_session = False
     if db_session is None:
-        db_session = session()
+        db_session = DBGlobalSession().new_session()
         created_session = True
 
     try:
@@ -518,7 +519,7 @@ def end_game(ctx: ApplicationContext, winner: str) -> None:
             raise ValueError("Invalid `winner`. Must be either `team 1` or `team 2`.")
 
         # Setting up session
-        db_session: scoped_session = session()
+        db_session: scoped_session = DBGlobalSession().new_session()
 
         try:
             logger.info(f"\nI think the winning team is {winning_team}\n")

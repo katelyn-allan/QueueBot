@@ -1,6 +1,6 @@
 import discord
 from discord import ApplicationContext
-import commands.player_stats as player_stats
+import database.models.player_data as player_data
 from typing import List, Dict, Self
 from discord.ext import commands
 
@@ -25,7 +25,7 @@ class PlayerInfoCog(commands.Cog):
     async def slash_get_stats(self: Self, ctx: ApplicationContext) -> None:
         """Gets a player's stats and returns it ephemerally."""
         await ctx.defer(ephemeral=True)
-        stats: Dict[str, Dict[str, float]] = player_stats.find_player_stats(ctx.user.id)
+        stats: Dict[str, Dict[str, float]] = player_data.find_player_stats(ctx.user.id)
         embed = discord.Embed(
             title="Player Stats",
             color=discord.Colour.blurple(),
