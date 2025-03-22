@@ -1,7 +1,7 @@
 py-cord==2.*
 python-dotenv==1.*
 trueskill==0.4.*
-scipy==1.10.*
+scipy==1.*
 black==23.*
 ruff==0.0.*
 pre-commit==3.3.*
