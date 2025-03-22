@@ -8,6 +8,7 @@ Create a copy of `env_template.txt`, rename it to `.env` and populate with your 
 If you do not have a database setup to use, create a file in this directory called `player_data.db`. In the `.env` file, under `DB_PATH`, put `./player_data.db`
 
 #### Using Docker
+_(Please note that running the application through docker requires the database file to be local to the docker environment at this time)._
 This application allows running through docker. Docker desktop can be installed [here](https://www.docker.com/products/docker-desktop/).
 
 To run using docker, navigate to the folder the code is installed in in your terminal and run `docker compose up`.
