@@ -3,9 +3,20 @@
 Configures a discord bot that can be used to organize users into games of Heroes of the Storm through allowing them to assign roles that will be prioritized, then sorting them into two teams of 5, which will be balanced by an internally tracked MMR.
 
 ## First-time Setup
+Create a copy of `env_template.txt`, rename it to `.env` and populate with your equivalent values for your server and application.
+
+If you do not have a database setup to use, create a file in this directory called `player_data.db`. In the `.env` file, under `DB_PATH`, put `./player_data.db`
+
+#### Using Docker
+This application allows running through docker. Docker desktop can be installed [here](https://www.docker.com/products/docker-desktop/).
+
+To run using docker, navigate to the folder the code is installed in in your terminal and run `docker compose up`.
+
+You should see the project running in docker desktop and can monitor its outputs there!
+
+#### Using Python
 This project is built on Python 3.11.0, and uses pip-tools to manage dependencies. It is recommended to use a virtual environment to manage the dependencies.
 Run `pip install -r requirements.txt` to install the required packages.
-Create a copy of `env_template.txt`, rename it to `.env` and populate with your equivalent values for your server and application.
 
 You can run the bot with `python core.py` or `python3 core.py` depending on your system.
 
