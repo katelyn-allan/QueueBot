@@ -7,3 +7,4 @@ ruff==0.0.*
 pre-commit==3.3.*
 pip-tools==7.3.*
 sqlalchemy==2.*
+dotenv
